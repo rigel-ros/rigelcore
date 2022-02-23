@@ -1,5 +1,5 @@
 import unittest
-from rigelcore.docker import DockerClient
+from rigelcore.clients import DockerClient
 from rigelcore.exceptions import (
     DockerImageNotFoundError,
     DockerOperationError,
@@ -11,10 +11,10 @@ from unittest.mock import MagicMock, Mock, patch
 
 class DockerClientTesting(unittest.TestCase):
     """
-    Test suite for rigelcore.docker.DockerClient class.
+    Test suite for rigelcore.clients.DockerClient class.
     """
 
-    @patch('rigelcore.docker.client.DockerClient.print_logs')
+    @patch('rigelcore.clients.docker.DockerClient.print_logs')
     def test_client_image_build(self, print_mock: Mock) -> None:
         """
         Ensure that the creation of Docker images works as expected.
@@ -144,7 +144,7 @@ class DockerClientTesting(unittest.TestCase):
             registry=test_registry
         )
 
-    @patch('rigelcore.docker.client.DockerClient.print_logs')
+    @patch('rigelcore.clients.docker.DockerClient.print_logs')
     def test_client_image_push(self, print_mock: Mock) -> None:
         """
         Ensure that the deploy of Docker images works as expected.
@@ -165,7 +165,7 @@ class DockerClientTesting(unittest.TestCase):
         )
         print_mock.assert_called_once_with(docker_mock_return_value)
 
-    @patch('rigelcore.docker.client.DockerLogPrinter.log')
+    @patch('rigelcore.clients.docker.DockerLogPrinter.log')
     def test_docker_operation_error(self, logger_mock: Mock) -> None:
         """
         Ensure that DockerOperationError is thrown whenever an error log is found.
