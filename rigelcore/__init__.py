@@ -5,7 +5,12 @@ from .exceptions import (  # noqa: F401
     DockerImageNotFoundError,
     DockerOperationError,
     InvalidDockerImageNameError,
-    InvalidImageRegistryError
+    InvalidImageRegistryError,
+    InvalidValueError,
+    MissingRequiredFieldError,
+    UndeclaredEnvironmentVariableError,
+    UndeclaredGlobalVariableError,
+    UndeclaredValueError,
 )
 
 __version__ = '0.1.0'

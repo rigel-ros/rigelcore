@@ -60,3 +60,64 @@ class DockerOperationError(RigelError):
     """
     base = "An error while calling Docker: {msg}."
     code = 5
+
+
+#################################################################################
+
+class UndeclaredValueError(RigelError):
+    """
+    Raised whenever an attempt is made to instantiate a class using undeclared field values.
+
+    :type field: string
+    :ivar field: The field that was left undeclared.
+    """
+    base = "Field '{field}' was left undeclared."
+    code = 6
+
+
+class InvalidValueError(RigelError):
+    """
+    Raised whenever an attempt is made to instantiate a class using invalid field values.
+
+    :type instance_type: Type
+    :ivar instance_type: The model being instantiated.
+    :type field: string
+    :ivar field: The field whose specified value is invalid.
+    """
+    base = "Unable to create of instance of class '{instance_type}': invalid value for field '{field}'."
+    code = 7
+
+
+class MissingRequiredFieldError(RigelError):
+    """
+    Raised whenever an attempt is made to instantiate a class with insufficient data.
+
+    :type field: string
+    :ivar field: Name of the missing field.
+    """
+    base = "Required field '{field}' is missing."
+    code = 8
+
+
+class UndeclaredEnvironmentVariableError(RigelError):
+    """
+    Raised whenever an attempt is made to use the value of an undeclared environment variable.
+
+    :type env: string
+    :ivar env: The undeclared environment variable.
+    """
+    base = "Environment variable {env} is not declared."
+    code = 9
+
+
+class UndeclaredGlobalVariableError(RigelError):
+    """
+    Raised whenever an undeclared global variable is referenced.
+
+    :type field: string
+    :ivar field: Path for the field referencing the global varialble.
+    :type var: string
+    :ivar var: Global variable identifier.
+    """
+    base = "Field '{field}' set to have the value of undeclared global variable '{var}'."
+    code = 10

@@ -4,6 +4,11 @@ from rigelcore.exceptions import (
     DockerOperationError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
+    InvalidValueError,
+    MissingRequiredFieldError,
+    UndeclaredEnvironmentVariableError,
+    UndeclaredGlobalVariableError,
+    UndeclaredValueError,
     RigelError
 )
 
@@ -55,6 +60,55 @@ class ExceptionTesting(unittest.TestCase):
         err = DockerOperationError(msg=test_msg)
         self.assertEqual(err.code, 5)
         self.assertEqual(err.kwargs['msg'], test_msg)
+
+    def test_undeclared_value_error(self) -> None:
+        """
+        Ensure that instances of UndeclaredValueError are thrown as expected.
+        """
+        test_field = 'test_field'
+        err = UndeclaredValueError(field=test_field)
+        self.assertEqual(err.code, 6)
+        self.assertEqual(err.kwargs['field'], test_field)
+
+    def test_invalid_value_error(self) -> None:
+        """
+        Ensure that instances of InvalidValueError are thrown as expected.
+        """
+        test_instance_type = str
+        test_field = 'test_field'
+        err = InvalidValueError(instance_type=test_instance_type, field=test_field)
+        self.assertEqual(err.code, 7)
+        self.assertEqual(err.kwargs['instance_type'], test_instance_type)
+        self.assertEqual(err.kwargs['field'], test_field)
+
+    def test_missing_required_field_error(self) -> None:
+        """
+        Ensure that instances of MissingRequiredFieldError are thrown as expected.
+        """
+        test_field = 'test_field'
+        err = MissingRequiredFieldError(field=test_field)
+        self.assertEqual(err.code, 8)
+        self.assertEqual(err.kwargs['field'], test_field)
+
+    def test_undeclared_environment_variable_error(self) -> None:
+        """
+        Ensure that instances of UndeclaredEnvironmentVariableError are thrown as expected.
+        """
+        test_env = 'TEST_ENV'
+        err = UndeclaredEnvironmentVariableError(env=test_env)
+        self.assertEqual(err.code, 9)
+        self.assertEqual(err.kwargs['env'], test_env)
+
+    def test_undeclared_global_variable_error(self) -> None:
+        """
+        Ensure that instances of UndeclaredGlobalVariableError are thrown as expected.
+        """
+        test_field = 'test_field'
+        test_var = 'test_var'
+        err = UndeclaredGlobalVariableError(field=test_field, var=test_var)
+        self.assertEqual(err.code, 10)
+        self.assertEqual(err.kwargs['field'], test_field)
+        self.assertEqual(err.kwargs['var'], test_var)
 
 
 if __name__ == '__main__':
