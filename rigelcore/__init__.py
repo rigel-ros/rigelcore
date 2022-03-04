@@ -4,6 +4,7 @@ from . import models  # noqa: F401
 from .exceptions import (  # noqa: F401
     RigelError,
     DockerImageNotFoundError,
+    DockerNotFoundError,
     DockerOperationError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,

@@ -1,6 +1,7 @@
 import unittest
 from rigelcore.exceptions import (
     DockerImageNotFoundError,
+    DockerNotFoundError,
     DockerOperationError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
@@ -109,6 +110,13 @@ class ExceptionTesting(unittest.TestCase):
         self.assertEqual(err.code, 10)
         self.assertEqual(err.kwargs['field'], test_field)
         self.assertEqual(err.kwargs['var'], test_var)
+
+    def test_docker_not_found_error(self) -> None:
+        """
+        Ensure that instances of DockerNotFoundError are thrown as expected.
+        """
+        err = DockerNotFoundError()
+        self.assertEqual(err.code, 11)
 
 
 if __name__ == '__main__':

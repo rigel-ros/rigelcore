@@ -62,8 +62,6 @@ class DockerOperationError(RigelError):
     code = 5
 
 
-#################################################################################
-
 class UndeclaredValueError(RigelError):
     """
     Raised whenever an attempt is made to instantiate a class using undeclared field values.
@@ -121,3 +119,11 @@ class UndeclaredGlobalVariableError(RigelError):
     """
     base = "Field '{field}' set to have the value of undeclared global variable '{var}'."
     code = 10
+
+
+class DockerNotFoundError(RigelError):
+    """
+    Raised whenever an attempt is made to connect to the Docker daemon when it is not running.
+    """
+    base = "Unable to connect to Docker daemon."
+    code = 11

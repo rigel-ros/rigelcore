@@ -1,6 +1,7 @@
 import docker
 from rigelcore.exceptions import (
     DockerImageNotFoundError,
+    DockerNotFoundError,
     DockerOperationError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
@@ -28,7 +29,10 @@ class DockerClient:
         if client:
             self.client = client
         else:
-            self.client = docker.from_env().api
+            try:
+                self.client = docker.from_env().api
+            except docker.errors.DockerException:
+                raise DockerNotFoundError()
 
     def print_logs(self, image: docker.models.images.Image) -> None:
         """
@@ -49,10 +53,12 @@ class DockerClient:
                     raise DockerOperationError(msg=log['error'])
                 break
 
-    def build(self, dockerfile: str, image: str, buildargs: Dict[str, str]) -> None:
+    def build(self, path: str, dockerfile: str, image: str, buildargs: Dict[str, str]) -> None:
         """
         Build a new Docker image.
 
+        :type path: string
+        :param path: Root of the build context.
         :type dockerfile: string
         :param dockerfile: Path for the Dockerfile.
         :type image: string
@@ -61,7 +67,7 @@ class DockerClient:
         :param buildargs: Build arguments.
         """
         built_image = self.client.build(
-            path='.',
+            path=path,
             dockerfile=dockerfile,
             tag=image,
             buildargs=buildargs,

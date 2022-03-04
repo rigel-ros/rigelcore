@@ -1,7 +1,9 @@
+import docker
 import unittest
 from rigelcore.clients import DockerClient
 from rigelcore.exceptions import (
     DockerImageNotFoundError,
+    DockerNotFoundError,
     DockerOperationError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError
@@ -14,11 +16,23 @@ class DockerClientTesting(unittest.TestCase):
     Test suite for rigelcore.clients.DockerClient class.
     """
 
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_not_found_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that DockerNotFoundError is thrown
+        if the Docker daemon is not running.
+        """
+        docker_mock.side_effect = docker.errors.DockerException
+
+        with self.assertRaises(DockerNotFoundError):
+            DockerClient()
+
     @patch('rigelcore.clients.docker.DockerClient.print_logs')
     def test_client_image_build(self, print_mock: Mock) -> None:
         """
         Ensure that the creation of Docker images works as expected.
         """
+        test_context_path = 'test_context_path'
         test_dockerfile_path = 'test_dockerfile_path'
         test_image = 'test_image'
         test_buildargs = {'TEST_VARIABLE': 'TEST_VALUE'}
@@ -28,10 +42,10 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.build.return_value = docker_mock_return_value
 
         docker_client = DockerClient(docker_mock)
-        docker_client.build(test_dockerfile_path, test_image, test_buildargs)
+        docker_client.build(test_context_path, test_dockerfile_path, test_image, test_buildargs)
 
         docker_mock.build.assert_called_once_with(
-            path='.',
+            path=test_context_path,
             decode=True,
             rm=True,
             dockerfile=test_dockerfile_path,
