@@ -18,6 +18,17 @@ class RigelError(Exception):
         self.kwargs = kwargs
 
 
+class DockerAPIError(RigelError):
+    """
+    Raised whenever an exception is thrown while making a call to the Docker API.
+
+    :type exception: docker.errors.DockerException
+    :ivar exception: The exception thrown by the Docker API.
+    """
+    base = "An error occured while calling the Docker API: {exception}"
+    code = 2
+
+
 class InvalidDockerImageNameError(RigelError):
     """
     Raised whenever an attempt is made to tag a Docker image using an invalid image name.
@@ -26,29 +37,7 @@ class InvalidDockerImageNameError(RigelError):
     :ivar image: Invalid Docker image name.
     """
     base = "Invalid Docker image name '{image}'."
-    code = 2
-
-
-class DockerImageNotFoundError(RigelError):
-    """
-    Raised whenever an attempt is made to tag a Docker image that does not exist.
-
-    :type image: string
-    :ivar image: Name of unexisting Docker image.
-    """
-    base = "Docker image {image} was not found."
     code = 3
-
-
-class InvalidImageRegistryError(RigelError):
-    """
-    Raised whenever an attempt is made to authenticate with an invalid Docker registry.
-
-    :type registry: string
-    :ivar registry: Name of invalid Docke registry.
-    """
-    base = "Invalid Docker registry '{registry}'."
-    code = 4
 
 
 class DockerOperationError(RigelError):
@@ -59,7 +48,7 @@ class DockerOperationError(RigelError):
     :ivar msg: The error message as provided by the Docker API.
     """
     base = "An error while calling Docker: {msg}."
-    code = 5
+    code = 4
 
 
 class UndeclaredValueError(RigelError):
@@ -70,7 +59,7 @@ class UndeclaredValueError(RigelError):
     :ivar field: The field that was left undeclared.
     """
     base = "Field '{field}' was left undeclared."
-    code = 6
+    code = 5
 
 
 class InvalidValueError(RigelError):
@@ -83,7 +72,7 @@ class InvalidValueError(RigelError):
     :ivar field: The field whose specified value is invalid.
     """
     base = "Unable to create of instance of class '{instance_type}': invalid value for field '{field}'."
-    code = 7
+    code = 6
 
 
 class MissingRequiredFieldError(RigelError):
@@ -94,7 +83,7 @@ class MissingRequiredFieldError(RigelError):
     :ivar field: Name of the missing field.
     """
     base = "Required field '{field}' is missing."
-    code = 8
+    code = 7
 
 
 class UndeclaredEnvironmentVariableError(RigelError):
@@ -105,7 +94,7 @@ class UndeclaredEnvironmentVariableError(RigelError):
     :ivar env: The undeclared environment variable.
     """
     base = "Environment variable {env} is not declared."
-    code = 9
+    code = 8
 
 
 class UndeclaredGlobalVariableError(RigelError):
@@ -118,15 +107,7 @@ class UndeclaredGlobalVariableError(RigelError):
     :ivar var: Global variable identifier.
     """
     base = "Field '{field}' set to have the value of undeclared global variable '{var}'."
-    code = 10
-
-
-class DockerNotFoundError(RigelError):
-    """
-    Raised whenever an attempt is made to connect to the Docker daemon when it is not running.
-    """
-    base = "Unable to connect to Docker daemon."
-    code = 11
+    code = 9
 
 
 class InvalidDockerClientInstanceError(RigelError):
@@ -134,15 +115,4 @@ class InvalidDockerClientInstanceError(RigelError):
     Raised whenever an invalid Docker client instance is provided.
     """
     base = "An invalid instance of docker.client.DockerClient was provided."
-    code = 12
-
-
-class InvalidDockerDriverError(RigelError):
-    """
-    Raised whenener an attempt is made to create a Docker network using an invalid driver.
-
-    :type driver: string
-    :ivar driver: The invalid driver.
-    """
-    base = "Unable to create Docker network due to invalid driver {driver}."
-    code = 13
+    code = 10

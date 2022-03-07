@@ -1,12 +1,9 @@
 import docker
 from rigelcore.exceptions import (
-    DockerImageNotFoundError,
-    DockerNotFoundError,
+    DockerAPIError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
-    InvalidDockerDriverError,
     InvalidDockerImageNameError,
-    InvalidImageRegistryError,
 )
 from rigelcore.loggers import DockerLogPrinter
 from typing import Dict, Optional
@@ -35,9 +32,8 @@ class DockerClient:
         else:
             try:
                 self.client = docker.from_env()
-                print(f'Client initialized with type {type(self.client)}')
-            except docker.errors.DockerException:
-                raise DockerNotFoundError()
+            except docker.errors.DockerException as exception:
+                raise DockerAPIError(exception=exception)
 
     def print_logs(self, image: docker.models.images.Image) -> None:
         """
@@ -105,8 +101,8 @@ class DockerClient:
                 repository=desired_image_name,
                 tag=desired_image_tag
             )
-        except docker.errors.ImageNotFound:
-            raise DockerImageNotFoundError(image=source_image)
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
 
     def login(self, registry: str, username: str, password: str) -> None:
         """
@@ -125,8 +121,8 @@ class DockerClient:
                 password=password,
                 registry=registry
             )
-        except docker.errors.APIError:
-            raise InvalidImageRegistryError(registry=registry)
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
 
     def push(self, image: str) -> None:
         """
@@ -166,5 +162,5 @@ class DockerClient:
                     name,
                     driver=driver
                 )
-        except docker.errors.NotFound:
-            raise InvalidDockerDriverError(driver=driver)
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
