@@ -12,25 +12,25 @@ from typing import Dict, Optional
 
 class DockerClient:
     """
-    A wrapper class for the docker.api.client.APIClient.
+    A wrapper class for the docker.client.DockerClient.
     Keeps the same functionality but allows for error handling that suits better Rigel.
     """
 
     # A Docker client instance.
-    client: docker.api.client.APIClient
+    client: docker.client.DockerClient
 
-    def __init__(self, client: Optional[docker.api.client.APIClient] = None) -> None:
+    def __init__(self, client: Optional[docker.client.DockerClient] = None) -> None:
         """
         Create a Docker client instance.
 
-        :type client: Optioanl[docker.api.client.APIClient]
+        :type client: Optioanl[docker.client.DockerClient]
         :param client: A Docker client instance.
         """
         if client:
             self.client = client
         else:
             try:
-                self.client = docker.from_env().api
+                self.client = docker.from_env()
             except docker.errors.DockerException:
                 raise DockerNotFoundError()
 
@@ -66,7 +66,7 @@ class DockerClient:
         :type buildargs: Dict[str, str]
         :param buildargs: Build arguments.
         """
-        built_image = self.client.build(
+        built_image = self.client.api.build(
             path=path,
             dockerfile=dockerfile,
             tag=image,
@@ -95,7 +95,7 @@ class DockerClient:
             desired_image_tag = 'latest'
 
         try:
-            self.client.tag(
+            self.client.api.tag(
                 image=source_image,
                 repository=desired_image_name,
                 tag=desired_image_tag
@@ -115,7 +115,7 @@ class DockerClient:
         :param password: The registry password.
         """
         try:
-            self.client.login(
+            self.client.api.login(
                 username=username,
                 password=password,
                 registry=registry
@@ -130,5 +130,5 @@ class DockerClient:
         :type image: string
         :param image: The name of Docker image.
         """
-        pushed_image = self.client.push(image, stream=True, decode=True)
+        pushed_image = self.client.api.push(image, stream=True, decode=True)
         self.print_logs(pushed_image)
