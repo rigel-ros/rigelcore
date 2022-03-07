@@ -26,10 +26,10 @@ class DockerClientTesting(unittest.TestCase):
             DockerClient('invalid_docker_client_instance')
 
     @patch('rigelcore.clients.docker.docker.from_env')
-    def test_docker_not_found_error(self, docker_mock: Mock) -> None:
+    def test_docker_from_env_error(self, docker_mock: Mock) -> None:
         """
-        Ensure that DockerAPIError is thrown
-        if the Docker daemon is not running.
+        Ensure that an instance of DockerAPIError is thrown
+        if an error while trying to connect to the Docker daemon.
         """
         docker_mock.side_effect = docker.errors.DockerException
 
@@ -65,6 +65,29 @@ class DockerClientTesting(unittest.TestCase):
             buildargs=test_buildargs
         )
         print_mock.assert_called_once_with(docker_api_mock_return_value)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_client_image_build_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while trying to build a Docker image.
+        """
+
+        test_exception = docker.errors.DockerException()
+
+        docker_api_mock = MagicMock()
+        docker_api_mock.api.build.side_effect = test_exception
+        docker_mock.return_value = docker_api_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.build(
+                'test_context_path',
+                'test_dockerfile_path',
+                'test_image',
+                {'TEST_VARIABLE': 'TEST_VALUE'}
+            )
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     def test_invalid_docker_image_name_error(self) -> None:
         """
@@ -124,48 +147,42 @@ class DockerClientTesting(unittest.TestCase):
         )
 
     @patch('rigelcore.clients.docker.docker.from_env')
-    def test_docker_image_not_found_error(self, docker_mock: Mock) -> None:
+    def test_docker_image_tag_api_error(self, docker_mock: Mock) -> None:
         """
-        Ensure that InvalidDockerImageNameError is thrown if an invalid
-        source image is referenced while using function 'tag'.
-        """
-        test_source_image = 'test_source_image'
-
-        def raise_error(image: str, repository: str, tag: str) -> None:
-            raise InvalidDockerImageNameError(image=image)
-
-        docker_api_mock = MagicMock()
-        docker_api_mock.api.tag.side_effect = raise_error
-        docker_api_mock.api.tag.return_value = None
-
-        docker_mock.return_value = docker_api_mock
-
-        with self.assertRaises(InvalidDockerImageNameError) as context:
-            docker_client = DockerClient()
-            docker_client.tag(test_source_image, 'test_target_image')
-        self.assertEqual(context.exception.kwargs['image'], test_source_image)
-
-    @patch('rigelcore.clients.docker.docker.from_env')
-    def test_invalid_image_registry_error(self, docker_mock: Mock) -> None:
-        """
-        Ensure that DockerAPIError is thrown if an invalid
-        registry is referenced while using function 'login'.
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while attempting to tag a Docker image.
         """
 
-        test_registry = 'test_registry'
         test_exception = docker.errors.DockerException()
 
-        def raise_error(username: str, password: str, registry: str) -> None:
-            raise test_exception
-
         docker_api_mock = MagicMock()
-        docker_api_mock.api.login.side_effect = raise_error
-
+        docker_api_mock.api.tag.side_effect = test_exception
         docker_mock.return_value = docker_api_mock
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
-            docker_client.login(test_registry, 'test_username', 'test_password')
+            docker_client.tag(
+                'test_source_image',
+                'test_target_image'
+            )
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_invalid_image_registry_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that DockerAPIError is thrown
+        if an error occurs while attempting to login to a Docker registry.
+        """
+
+        test_exception = docker.errors.DockerException()
+
+        docker_api_mock = MagicMock()
+        docker_api_mock.api.login.side_effect = test_exception
+        docker_mock.return_value = docker_api_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.login('test_registry', 'test_username', 'test_password')
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.docker.from_env')
@@ -213,6 +230,25 @@ class DockerClientTesting(unittest.TestCase):
             decode=True,
         )
         print_mock.assert_called_once_with(docker_api_mock_return_value)
+
+    @patch('rigelcore.clients.docker.DockerClient.print_logs')
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_client_image_push_api_error(self, docker_mock: Mock, print_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while attempting to push a Docker image to a registry.
+        """
+
+        test_exception = docker.errors.DockerException()
+
+        docker_api_mock = MagicMock()
+        docker_api_mock.api.push.side_effect = test_exception
+        docker_mock.return_value = docker_api_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.push('test_image')
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.DockerLogPrinter.log')
     @patch('rigelcore.clients.docker.docker.from_env')
@@ -321,24 +357,27 @@ class DockerClientTesting(unittest.TestCase):
 
     @patch('rigelcore.clients.docker.docker.from_env')
     @patch('rigelcore.clients.docker.DockerClient.network_exists')
-    def test_invalid_docker_driver_error(self, network_mock: Mock, docker_mock: Mock) -> None:
+    def test_docker_create_network_api_error_(self, network_mock: Mock, docker_mock: Mock) -> None:
         """
+        Ensure that an instance of DockerAPI error is thrown
+        if an error occurs while creating a new Docker network using the Docker API.
         """
 
-        test_docker_network_name = 'test_docker_network_name'
-        test_docker_network_driver = 'test_docker_network_driver'
+        test_exception = docker.errors.DockerException()
 
-        test_exception = docker.errors.NotFound(message='Test error message.')
-        network_mock.side_effect = test_exception
+        docker_network_mock = MagicMock()
+        docker_network_mock.networks.create.side_effect = test_exception
+        docker_mock.return_value = docker_network_mock
+
+        network_mock.return_value = False
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
             docker_client.create_network(
-                test_docker_network_name,
-                test_docker_network_driver
+                'test_docker_network_name',
+                'test_docker_network_driver'
             )
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
-        network_mock.assert_called_once_with(test_docker_network_name)
 
 
 if __name__ == '__main__':

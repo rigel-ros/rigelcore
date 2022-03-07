@@ -34,6 +34,7 @@ class ExceptionTesting(unittest.TestCase):
         err = DockerAPIError(exception=exception)
         self.assertEqual(err.code, 2)
         self.assertEqual(err.kwargs['exception'], exception)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_docker_invalid_image_name_error(self) -> None:
         """
@@ -43,6 +44,7 @@ class ExceptionTesting(unittest.TestCase):
         err = InvalidDockerImageNameError(image=test_image)
         self.assertEqual(err.code, 3)
         self.assertEqual(err.kwargs['image'], test_image)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_docker_operation_error(self) -> None:
         """
@@ -52,6 +54,7 @@ class ExceptionTesting(unittest.TestCase):
         err = DockerOperationError(msg=test_msg)
         self.assertEqual(err.code, 4)
         self.assertEqual(err.kwargs['msg'], test_msg)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_undeclared_value_error(self) -> None:
         """
@@ -61,6 +64,7 @@ class ExceptionTesting(unittest.TestCase):
         err = UndeclaredValueError(field=test_field)
         self.assertEqual(err.code, 5)
         self.assertEqual(err.kwargs['field'], test_field)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_invalid_value_error(self) -> None:
         """
@@ -72,6 +76,7 @@ class ExceptionTesting(unittest.TestCase):
         self.assertEqual(err.code, 6)
         self.assertEqual(err.kwargs['instance_type'], test_instance_type)
         self.assertEqual(err.kwargs['field'], test_field)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_missing_required_field_error(self) -> None:
         """
@@ -81,6 +86,7 @@ class ExceptionTesting(unittest.TestCase):
         err = MissingRequiredFieldError(field=test_field)
         self.assertEqual(err.code, 7)
         self.assertEqual(err.kwargs['field'], test_field)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_undeclared_environment_variable_error(self) -> None:
         """
@@ -90,6 +96,7 @@ class ExceptionTesting(unittest.TestCase):
         err = UndeclaredEnvironmentVariableError(env=test_env)
         self.assertEqual(err.code, 8)
         self.assertEqual(err.kwargs['env'], test_env)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_undeclared_global_variable_error(self) -> None:
         """
@@ -101,6 +108,7 @@ class ExceptionTesting(unittest.TestCase):
         self.assertEqual(err.code, 9)
         self.assertEqual(err.kwargs['field'], test_field)
         self.assertEqual(err.kwargs['var'], test_var)
+        self.assertTrue(isinstance(err, RigelError))
 
     def test_invalid_docker_client_instance_error(self) -> None:
         """
@@ -108,6 +116,7 @@ class ExceptionTesting(unittest.TestCase):
         """
         err = InvalidDockerClientInstanceError()
         self.assertEqual(err.code, 10)
+        self.assertTrue(isinstance(err, RigelError))
 
 
 if __name__ == '__main__':

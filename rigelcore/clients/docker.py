@@ -67,15 +67,18 @@ class DockerClient:
         :type buildargs: Dict[str, str]
         :param buildargs: Build arguments.
         """
-        built_image = self.client.api.build(
-            path=path,
-            dockerfile=dockerfile,
-            tag=image,
-            buildargs=buildargs,
-            decode=True,
-            rm=True
-        )
-        self.print_logs(built_image)
+        try:
+            built_image = self.client.api.build(
+                path=path,
+                dockerfile=dockerfile,
+                tag=image,
+                buildargs=buildargs,
+                decode=True,
+                rm=True
+            )
+            self.print_logs(built_image)
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
 
     def tag(self, source_image: str, target_image: str) -> None:
         """
@@ -131,8 +134,11 @@ class DockerClient:
         :type image: string
         :param image: The name of the Docker image.
         """
-        pushed_image = self.client.api.push(image, stream=True, decode=True)
-        self.print_logs(pushed_image)
+        try:
+            pushed_image = self.client.api.push(image, stream=True, decode=True)
+            self.print_logs(pushed_image)
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
 
     def network_exists(self, name: str) -> bool:
         """
@@ -145,7 +151,10 @@ class DockerClient:
         :return: True if a Docker network already exists
         with the provided name. False otherwise.
         """
-        return bool(self.client.networks.list(names=[name]))
+        try:
+            return bool(self.client.networks.list(names=[name]))
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
 
     def create_network(self, name: str, driver: str) -> None:
         """
@@ -156,11 +165,11 @@ class DockerClient:
         :type driver: string
         :param driver: Name of driver used to create the network.
         """
-        try:
-            if not self.network_exists(name):
+        if not self.network_exists(name):
+            try:
                 self.client.networks.create(
                     name,
                     driver=driver
                 )
-        except docker.errors.DockerException as exception:
-            raise DockerAPIError(exception=exception)
+            except docker.errors.DockerException as exception:
+                raise DockerAPIError(exception=exception)
