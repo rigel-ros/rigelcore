@@ -4,6 +4,7 @@ from rigelcore.exceptions import (
     DockerNotFoundError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
+    InvalidDockerDriverError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
 )
@@ -34,6 +35,7 @@ class DockerClient:
         else:
             try:
                 self.client = docker.from_env()
+                print(f'Client initialized with type {type(self.client)}')
             except docker.errors.DockerException:
                 raise DockerNotFoundError()
 
@@ -131,7 +133,38 @@ class DockerClient:
         Push a Docker image to a Docker image registry.
 
         :type image: string
-        :param image: The name of Docker image.
+        :param image: The name of the Docker image.
         """
         pushed_image = self.client.api.push(image, stream=True, decode=True)
         self.print_logs(pushed_image)
+
+    def network_exists(self, name: str) -> bool:
+        """
+        Verify if a Docker network already exists.
+
+        :type name: string
+        :param name: The name of the Docker network.
+
+        :rtype: bool
+        :return: True if a Docker network already exists
+        with the provided name. False otherwise.
+        """
+        return bool(self.client.networks.list(names=[name]))
+
+    def create_network(self, name: str, driver: str) -> None:
+        """
+        Create a Docker network.
+
+        :type name: string
+        :param name: The name of the Docker network.
+        :type driver: string
+        :param driver: Name of driver used to create the network.
+        """
+        try:
+            if not self.network_exists(name):
+                self.client.networks.create(
+                    name,
+                    driver=driver
+                )
+        except docker.errors.NotFound:
+            raise InvalidDockerDriverError(driver=driver)

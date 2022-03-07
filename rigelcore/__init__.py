@@ -7,6 +7,7 @@ from .exceptions import (  # noqa: F401
     DockerNotFoundError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
+    InvalidDockerDriverError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
     InvalidValueError,

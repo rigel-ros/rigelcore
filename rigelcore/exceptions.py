@@ -135,3 +135,14 @@ class InvalidDockerClientInstanceError(RigelError):
     """
     base = "An invalid instance of docker.client.DockerClient was provided."
     code = 12
+
+
+class InvalidDockerDriverError(RigelError):
+    """
+    Raised whenener an attempt is made to create a Docker network using an invalid driver.
+
+    :type driver: string
+    :ivar driver: The invalid driver.
+    """
+    base = "Unable to create Docker network due to invalid driver {driver}."
+    code = 13

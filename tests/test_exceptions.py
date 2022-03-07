@@ -4,6 +4,7 @@ from rigelcore.exceptions import (
     DockerNotFoundError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
+    InvalidDockerDriverError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
     InvalidValueError,
@@ -125,6 +126,15 @@ class ExceptionTesting(unittest.TestCase):
         """
         err = InvalidDockerClientInstanceError()
         self.assertEqual(err.code, 12)
+
+    def test_invalid_docker_driver_error(self) -> None:
+        """
+        Ensure that instances of InvalidDockerDriverError are thrown as expected.
+        """
+        test_docker_driver = 'test_docker_driver'
+        err = InvalidDockerDriverError(driver=test_docker_driver)
+        self.assertEqual(err.code, 13)
+        self.assertEqual(err.kwargs['driver'], test_docker_driver)
 
 
 if __name__ == '__main__':

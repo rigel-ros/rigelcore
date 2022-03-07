@@ -6,6 +6,7 @@ from rigelcore.exceptions import (
     DockerNotFoundError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
+    InvalidDockerDriverError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError
 )
@@ -230,6 +231,112 @@ class DockerClientTesting(unittest.TestCase):
         self.assertEqual(context.exception.kwargs['msg'], test_error_message)
 
         logger_mock.assert_called_once_with(log)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_network_exists_true(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to verify if a Docker network already exists
+        is working as expected.
+        """
+        test_docker_network = 'test_docker_network'
+
+        docker_networks_mock = MagicMock()
+        docker_networks_mock.networks.list.return_value = True
+        docker_mock.return_value = docker_networks_mock
+
+        docker_client = DockerClient()
+        network_exists = docker_client.network_exists(test_docker_network)
+
+        docker_networks_mock.networks.list.assert_called_once_with(names=[test_docker_network])
+        self.assertTrue(network_exists)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_network_exists_false(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to verify if a Docker network already exists
+        is working as expected.
+        """
+        test_docker_network = 'test_docker_network'
+
+        docker_networks_mock = MagicMock()
+        docker_networks_mock.networks.list.return_value = False
+        docker_mock.return_value = docker_networks_mock
+
+        docker_client = DockerClient()
+        network_exists = docker_client.network_exists(test_docker_network)
+
+        docker_networks_mock.networks.list.assert_called_once_with(names=[test_docker_network])
+        self.assertFalse(network_exists)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    def test_create_docker_network_new(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to create new Docker networks works as expected.
+        """
+
+        test_docker_network_name = 'test_docker_network_name'
+        test_docker_network_driver = 'test_docker_network_driver'
+
+        docker_networks_mock = MagicMock()
+        docker_mock.return_value = docker_networks_mock
+        network_mock.return_value = False
+
+        docker_client = DockerClient()
+        docker_client.create_network(
+            test_docker_network_name,
+            test_docker_network_driver
+        )
+
+        network_mock.assert_called_once_with(test_docker_network_name)
+        docker_networks_mock.networks.create.assert_called_once_with(
+            test_docker_network_name,
+            driver=test_docker_network_driver
+        )
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    def test_create_docker_network_existent(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to create new Docker networks first
+        verifies if a given Docker network exists before creating it.
+        """
+
+        test_docker_network_name = 'test_docker_network_name'
+        test_docker_network_driver = 'test_docker_network_driver'
+
+        docker_networks_mock = MagicMock()
+        docker_mock.return_value = docker_networks_mock
+        network_mock.return_value = True
+
+        docker_client = DockerClient()
+        docker_client.create_network(
+            test_docker_network_name,
+            test_docker_network_driver
+        )
+
+        network_mock.assert_called_once_with(test_docker_network_name)
+        docker_networks_mock.networks.create.assert_not_called()
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    def test_invalid_docker_driver_error(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        """
+
+        test_docker_network_name = 'test_docker_network_name'
+        test_docker_network_driver = 'test_docker_network_driver'
+
+        network_mock.side_effect = docker.errors.NotFound(message='Test error message.')
+
+        with self.assertRaises(InvalidDockerDriverError) as context:
+            docker_client = DockerClient()
+            docker_client.create_network(
+                test_docker_network_name,
+                test_docker_network_driver
+            )
+        self.assertEqual(context.exception.kwargs['driver'], test_docker_network_driver)
+        network_mock.assert_called_once_with(test_docker_network_name)
 
 
 if __name__ == '__main__':
