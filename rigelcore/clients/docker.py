@@ -3,6 +3,7 @@ from rigelcore.exceptions import (
     DockerImageNotFoundError,
     DockerNotFoundError,
     DockerOperationError,
+    InvalidDockerClientInstanceError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
 )
@@ -27,6 +28,8 @@ class DockerClient:
         :param client: A Docker client instance.
         """
         if client:
+            if not isinstance(client, docker.client.DockerClient):
+                raise InvalidDockerClientInstanceError()
             self.client = client
         else:
             try:

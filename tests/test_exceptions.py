@@ -3,6 +3,7 @@ from rigelcore.exceptions import (
     DockerImageNotFoundError,
     DockerNotFoundError,
     DockerOperationError,
+    InvalidDockerClientInstanceError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError,
     InvalidValueError,
@@ -117,6 +118,13 @@ class ExceptionTesting(unittest.TestCase):
         """
         err = DockerNotFoundError()
         self.assertEqual(err.code, 11)
+
+    def test_invalid_docker_client_instance_error(self) -> None:
+        """
+        Ensure that instances of InvalidDockerClientInstanceError are thrown as expected.
+        """
+        err = InvalidDockerClientInstanceError()
+        self.assertEqual(err.code, 12)
 
 
 if __name__ == '__main__':

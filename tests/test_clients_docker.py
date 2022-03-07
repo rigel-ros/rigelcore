@@ -5,6 +5,7 @@ from rigelcore.exceptions import (
     DockerImageNotFoundError,
     DockerNotFoundError,
     DockerOperationError,
+    InvalidDockerClientInstanceError,
     InvalidDockerImageNameError,
     InvalidImageRegistryError
 )
@@ -15,6 +16,14 @@ class DockerClientTesting(unittest.TestCase):
     """
     Test suite for rigelcore.clients.DockerClient class.
     """
+
+    def test_invalid_docker_client_instance_error(self) -> None:
+        """
+        Ensure that InvalidDockerClientInstanceError is thrown
+        if an invalid instance of docker.client.DockerClient is provided.
+        """
+        with self.assertRaises(InvalidDockerClientInstanceError):
+            DockerClient('invalid_docker_client_instance')
 
     @patch('rigelcore.clients.docker.docker.from_env')
     def test_docker_not_found_error(self, docker_mock: Mock) -> None:
@@ -40,14 +49,14 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_api_mock_return_value = 'TestImageObject'
         docker_api_mock = MagicMock()
-        docker_api_mock.build.return_value = docker_api_mock_return_value
+        docker_api_mock.api.build.return_value = docker_api_mock_return_value
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
-        docker_client = DockerClient(docker_mock)
+        docker_client = DockerClient()
         docker_client.build(test_context_path, test_dockerfile_path, test_image, test_buildargs)
 
-        docker_api_mock.build.assert_called_once_with(
+        docker_api_mock.api.build.assert_called_once_with(
             path=test_context_path,
             decode=True,
             rm=True,
@@ -79,12 +88,12 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_api_mock = MagicMock()
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
-        docker_client = DockerClient(docker_mock)
+        docker_client = DockerClient()
         docker_client.tag(test_source_image, test_target_image)
 
-        docker_api_mock.tag.assert_called_once_with(
+        docker_api_mock.api.tag.assert_called_once_with(
             image=test_source_image,
             repository=test_target_image,
             tag='latest'
@@ -103,12 +112,12 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_api_mock = MagicMock()
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
-        docker_client = DockerClient(docker_mock)
+        docker_client = DockerClient()
         docker_client.tag(test_source_image, complete_test_target_image)
 
-        docker_api_mock.tag.assert_called_once_with(
+        docker_api_mock.api.tag.assert_called_once_with(
             image=test_source_image,
             repository=test_target_image,
             tag=test_target_tag
@@ -126,13 +135,13 @@ class DockerClientTesting(unittest.TestCase):
             raise DockerImageNotFoundError(image=image)
 
         docker_api_mock = MagicMock()
-        docker_api_mock.tag.side_effect = raise_error
-        docker_api_mock.tag.return_value = None
+        docker_api_mock.api.tag.side_effect = raise_error
+        docker_api_mock.api.tag.return_value = None
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
         with self.assertRaises(DockerImageNotFoundError) as context:
-            docker_client = DockerClient(docker_mock)
+            docker_client = DockerClient()
             docker_client.tag(test_source_image, 'test_target_image')
         self.assertEqual(context.exception.kwargs['image'], test_source_image)
 
@@ -148,12 +157,12 @@ class DockerClientTesting(unittest.TestCase):
             raise InvalidImageRegistryError(registry=registry)
 
         docker_api_mock = MagicMock()
-        docker_api_mock.login.side_effect = raise_error
+        docker_api_mock.api.login.side_effect = raise_error
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
         with self.assertRaises(InvalidImageRegistryError) as context:
-            docker_client = DockerClient(docker_mock)
+            docker_client = DockerClient()
             docker_client.login(test_registry, 'test_username', 'test_password')
         self.assertEqual(context.exception.kwargs['registry'], test_registry)
 
@@ -168,12 +177,12 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_api_mock = MagicMock()
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
-        docker_client = DockerClient(docker_mock)
+        docker_client = DockerClient()
         docker_client.login(test_registry, test_username, test_password)
 
-        docker_api_mock.login.assert_called_once_with(
+        docker_api_mock.api.login.assert_called_once_with(
             username=test_username,
             password=test_password,
             registry=test_registry
@@ -189,14 +198,14 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_api_mock_return_value = 'TestImageObject'
         docker_api_mock = MagicMock()
-        docker_api_mock.push.return_value = docker_api_mock_return_value
+        docker_api_mock.api.push.return_value = docker_api_mock_return_value
 
-        docker_mock.api = docker_api_mock
+        docker_mock.return_value = docker_api_mock
 
-        docker_client = DockerClient(docker_mock)
+        docker_client = DockerClient()
         docker_client.push(test_image)
 
-        docker_api_mock.push.assert_called_once_with(
+        docker_api_mock.api.push.assert_called_once_with(
             test_image,
             stream=True,
             decode=True,
@@ -204,7 +213,8 @@ class DockerClientTesting(unittest.TestCase):
         print_mock.assert_called_once_with(docker_api_mock_return_value)
 
     @patch('rigelcore.clients.docker.DockerLogPrinter.log')
-    def test_docker_operation_error(self, logger_mock: Mock) -> None:
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_operation_error(self, docker_mock: Mock, logger_mock: Mock) -> None:
         """
         Ensure that DockerOperationError is thrown whenever an error log is found.
         """
@@ -215,7 +225,7 @@ class DockerClientTesting(unittest.TestCase):
         image_mock.__iter__.return_value = [log]
 
         with self.assertRaises(DockerOperationError) as context:
-            docker_client = DockerClient(MagicMock())
+            docker_client = DockerClient()
             docker_client.print_logs(image_mock)
         self.assertEqual(context.exception.kwargs['msg'], test_error_message)
 

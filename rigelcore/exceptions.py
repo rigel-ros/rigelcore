@@ -127,3 +127,11 @@ class DockerNotFoundError(RigelError):
     """
     base = "Unable to connect to Docker daemon."
     code = 11
+
+
+class InvalidDockerClientInstanceError(RigelError):
+    """
+    Raised whenever an invalid Docker client instance is provided.
+    """
+    base = "An invalid instance of docker.client.DockerClient was provided."
+    code = 12
