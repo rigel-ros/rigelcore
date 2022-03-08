@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Any
 
 
 class RigelError(Exception):
@@ -10,10 +10,10 @@ class RigelError(Exception):
     :type code: int
     :cvar code: The error code.
     """
-    base: str = 'Undefined Rigel error.'
+    base: str = 'Generic Rigel error.'
     code: int = 1
 
-    def __init__(self, **kwargs: Union[str, int, float, Type]):
+    def __init__(self, **kwargs: Any):
         Exception.__init__(self, self.base.format(**kwargs))
         self.kwargs = kwargs
 
@@ -40,6 +40,14 @@ class InvalidDockerImageNameError(RigelError):
     code = 3
 
 
+class InvalidDockerClientInstanceError(RigelError):
+    """
+    Raised whenever an invalid Docker client instance is provided.
+    """
+    base = "An invalid instance of docker.client.DockerClient was provided."
+    code = 4
+
+
 class DockerOperationError(RigelError):
     """
     Raised whenever an error occurs while calling the Docker API.
@@ -48,42 +56,19 @@ class DockerOperationError(RigelError):
     :ivar msg: The error message as provided by the Docker API.
     """
     base = "An error while calling Docker: {msg}."
-    code = 4
-
-
-class UndeclaredValueError(RigelError):
-    """
-    Raised whenever an attempt is made to instantiate a class using undeclared field values.
-
-    :type field: string
-    :ivar field: The field that was left undeclared.
-    """
-    base = "Field '{field}' was left undeclared."
     code = 5
 
 
-class InvalidValueError(RigelError):
+class PydanticValidationError(RigelError):
     """
-    Raised whenever an attempt is made to instantiate a class using invalid field values.
+    Raised whenever a ValidationError is thrown
+    while creating instances of pydantic.BaseModel.
 
-    :type instance_type: Type
-    :ivar instance_type: The model being instantiated.
-    :type field: string
-    :ivar field: The field whose specified value is invalid.
+    :type exception: pydantic.error_wrappers.ValidationError
+    :ivar exception: The exception thrown.
     """
-    base = "Unable to create of instance of class '{instance_type}': invalid value for field '{field}'."
+    base = "An error occurred while validating Pydantic model: {exception}."
     code = 6
-
-
-class MissingRequiredFieldError(RigelError):
-    """
-    Raised whenever an attempt is made to instantiate a class with insufficient data.
-
-    :type field: string
-    :ivar field: Name of the missing field.
-    """
-    base = "Required field '{field}' is missing."
-    code = 7
 
 
 class UndeclaredEnvironmentVariableError(RigelError):
@@ -94,7 +79,7 @@ class UndeclaredEnvironmentVariableError(RigelError):
     :ivar env: The undeclared environment variable.
     """
     base = "Environment variable {env} is not declared."
-    code = 8
+    code = 7
 
 
 class UndeclaredGlobalVariableError(RigelError):
@@ -107,12 +92,4 @@ class UndeclaredGlobalVariableError(RigelError):
     :ivar var: Global variable identifier.
     """
     base = "Field '{field}' set to have the value of undeclared global variable '{var}'."
-    code = 9
-
-
-class InvalidDockerClientInstanceError(RigelError):
-    """
-    Raised whenever an invalid Docker client instance is provided.
-    """
-    base = "An invalid instance of docker.client.DockerClient was provided."
-    code = 10
+    code = 8

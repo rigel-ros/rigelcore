@@ -1,15 +1,8 @@
-from pydantic.errors import (
-    MissingError,
-    NoneIsNotAllowedError,
-    PydanticTypeError
-)
 from pydantic.error_wrappers import (
     ValidationError
 )
 from rigelcore.exceptions import (
-    InvalidValueError,
-    MissingRequiredFieldError,
-    UndeclaredValueError
+    PydanticValidationError,
 )
 from typing import Any, Dict, List, Type
 
@@ -46,16 +39,5 @@ class ModelBuilder:
         try:
             return self.instance_type(*args, **kwargs)
 
-        except ValidationError as err:
-
-            for wrapper in err.args[0]:
-                field = wrapper.loc_tuple()[0]
-
-                if isinstance(wrapper.exc, MissingError):
-                    raise MissingRequiredFieldError(field=field)
-
-                elif isinstance(wrapper.exc, NoneIsNotAllowedError):
-                    raise UndeclaredValueError(field=field)
-
-                elif issubclass(wrapper.exc.__class__, PydanticTypeError):
-                    raise InvalidValueError(instance_type=err.args[1], field=field)
+        except ValidationError as exception:
+            raise PydanticValidationError(exception=exception)

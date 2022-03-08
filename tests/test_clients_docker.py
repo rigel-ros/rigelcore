@@ -3,7 +3,6 @@ import unittest
 from rigelcore.clients import DockerClient
 from rigelcore.exceptions import (
     DockerAPIError,
-
     DockerOperationError,
     InvalidDockerClientInstanceError,
     InvalidDockerImageNameError,
