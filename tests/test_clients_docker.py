@@ -277,14 +277,14 @@ class DockerClientTesting(unittest.TestCase):
         test_docker_network = 'test_docker_network'
 
         docker_networks_mock = MagicMock()
-        docker_networks_mock.networks.list.return_value = True
+        docker_networks_mock.networks.list.return_value = [docker.models.networks.Network()]
         docker_mock.return_value = docker_networks_mock
 
         docker_client = DockerClient()
-        network_exists = docker_client.network_exists(test_docker_network)
+        network = docker_client.get_network(test_docker_network)
 
         docker_networks_mock.networks.list.assert_called_once_with(names=[test_docker_network])
-        self.assertTrue(network_exists)
+        self.assertIsNotNone(network)
 
     @patch('rigelcore.clients.docker.docker.from_env')
     def test_docker_network_exists_false(self, docker_mock: Mock) -> None:
@@ -299,13 +299,13 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.return_value = docker_networks_mock
 
         docker_client = DockerClient()
-        network_exists = docker_client.network_exists(test_docker_network)
+        network_exists = docker_client.get_network(test_docker_network)
 
         docker_networks_mock.networks.list.assert_called_once_with(names=[test_docker_network])
-        self.assertFalse(network_exists)
+        self.assertIsNone(network_exists)
 
     @patch('rigelcore.clients.docker.docker.from_env')
-    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
     def test_create_docker_network_new(self, network_mock: Mock, docker_mock: Mock) -> None:
         """
         Ensure that the mechanism to create new Docker networks works as expected.
@@ -316,7 +316,7 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_networks_mock = MagicMock()
         docker_mock.return_value = docker_networks_mock
-        network_mock.return_value = False
+        network_mock.return_value = None
 
         docker_client = DockerClient()
         docker_client.create_network(
@@ -331,7 +331,7 @@ class DockerClientTesting(unittest.TestCase):
         )
 
     @patch('rigelcore.clients.docker.docker.from_env')
-    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
     def test_create_docker_network_existent(self, network_mock: Mock, docker_mock: Mock) -> None:
         """
         Ensure that the mechanism to create new Docker networks first
@@ -343,6 +343,7 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_networks_mock = MagicMock()
         docker_mock.return_value = docker_networks_mock
+
         network_mock.return_value = True
 
         docker_client = DockerClient()
@@ -355,10 +356,10 @@ class DockerClientTesting(unittest.TestCase):
         docker_networks_mock.networks.create.assert_not_called()
 
     @patch('rigelcore.clients.docker.docker.from_env')
-    @patch('rigelcore.clients.docker.DockerClient.network_exists')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
     def test_docker_create_network_api_error_(self, network_mock: Mock, docker_mock: Mock) -> None:
         """
-        Ensure that an instance of DockerAPI error is thrown
+        Ensure that an instance of DockerAPIError is thrown
         if an error occurs while creating a new Docker network using the Docker API.
         """
 
@@ -368,7 +369,7 @@ class DockerClientTesting(unittest.TestCase):
         docker_network_mock.networks.create.side_effect = test_exception
         docker_mock.return_value = docker_network_mock
 
-        network_mock.return_value = False
+        network_mock.return_value = None
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
@@ -377,6 +378,278 @@ class DockerClientTesting(unittest.TestCase):
                 'test_docker_network_driver'
             )
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
+    def test_docker_remove_network_api_error(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while deleting a Docker network using the Docker API.
+        """
+
+        test_network_name = 'test_network_name'
+        test_exception = docker.errors.DockerException()
+
+        network_instance_mock = MagicMock()
+        network_instance_mock.remove.side_effect = test_exception
+        network_mock.return_value = network_instance_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.remove_network(test_network_name)
+
+        network_mock.assert_called_once_with(test_network_name)
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
+    def test_docker_remove_network_unexistent(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a network delete Docker API call is only made if a given network exists.
+        """
+        test_network_name = 'test_network_name'
+
+        network_instance_mock = MagicMock()
+        network_instance_mock.__bool__.return_value = False
+        network_mock.return_value = network_instance_mock
+
+        docker_client = DockerClient()
+        docker_client.remove_network(test_network_name)
+
+        network_mock.assert_called_once_with(test_network_name)
+        network_instance_mock.remove.assert_not_called()
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_network')
+    def test_docker_remove_network_existent(self, network_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a network delete Docker API call is only made if a given network exists.
+        """
+        test_network_name = 'test_network_name'
+
+        network_instance_mock = MagicMock()
+        network_instance_mock.__bool__.return_value = True
+        network_mock.return_value = network_instance_mock
+
+        docker_client = DockerClient()
+        docker_client.remove_network(test_network_name)
+
+        network_mock.assert_called_once_with(test_network_name)
+        network_instance_mock.remove.assert_called_once()
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_container_api_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while retrieving a Docker container information using the Docker API.
+        """
+
+        test_exception = docker.errors.DockerException()
+
+        docker_clients_mock = MagicMock()
+        docker_clients_mock.containers.list.side_effect = test_exception
+        docker_mock.return_value = docker_clients_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.get_container('test_docker_container')
+
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_container_exists(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to retrieve Docker containers works as expected.
+        """
+        test_docker_container_name = 'test_docker_container_name'
+        test_docker_container_instance = docker.models.containers.Container()
+
+        docker_clients_mock = MagicMock()
+        docker_clients_mock.containers.list.return_value = [test_docker_container_instance]
+        docker_mock.return_value = docker_clients_mock
+
+        docker_client = DockerClient()
+        container = docker_client.get_container(test_docker_container_name)
+
+        docker_clients_mock.containers.list.assert_called_once_with(filters={'name': test_docker_container_name})
+        self.assertEqual(container, test_docker_container_instance)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_container_unexistent(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to retrieve Docker containers works as expected
+        if the specified Docker container does not exist.
+        """
+        test_docker_container_name = 'test_docker_container_name'
+
+        docker_clients_mock = MagicMock()
+        docker_clients_mock.containers.list.return_value = []
+        docker_mock.return_value = docker_clients_mock
+
+        docker_client = DockerClient()
+        container = docker_client.get_container(test_docker_container_name)
+
+        docker_clients_mock.containers.list.assert_called_once_with(filters={'name': test_docker_container_name})
+        self.assertIsNone(container)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_remove_container_api_error(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a DockerAPIError instance is thrown
+        if an error occurs while removing a Docker container using Docker API calls.
+        """
+        test_exception = docker.errors.DockerException()
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = True
+        container_instance_mock.remove.side_effect = test_exception
+        container_mock.return_value = container_instance_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.remove_container('test_docker_container_name')
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_remove_container_exists(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mecanism to delete Docker containers works as expected.
+        """
+        test_docker_container_name = 'test_docker_container_name'
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = True
+        container_mock.return_value = container_instance_mock
+
+        docker_client = DockerClient()
+        docker_client.remove_container(test_docker_container_name)
+
+        container_mock.assert_called_once_with(test_docker_container_name)
+        container_instance_mock.remove.assert_called_once_with(v=True, force=True)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_remove_container_unexistent(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mecanism to delete Docker containers works as expected
+        when the specified Docker container does not exist.
+        """
+        test_docker_container_name = 'test_docker_container_name'
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = False
+        container_mock.return_value = container_instance_mock
+
+        docker_client = DockerClient()
+        docker_client.remove_container(test_docker_container_name)
+
+        container_mock.assert_called_once_with(test_docker_container_name)
+        container_instance_mock.remove.assert_not_called()
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_run_container_api_error(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a DockerAPIError instance is thrown
+        if an error occurs while running a Docker container using Docker API calls.
+        """
+        test_exception = docker.errors.DockerException()
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = False
+        container_mock.return_value = container_instance_mock
+
+        docker_client_mock = MagicMock()
+        docker_client_mock.containers.run.side_effect = test_exception
+        docker_mock.return_value = docker_client_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.run_container(
+                'test_docker_container_name',
+                'test_docker_image_name'
+            )
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_run_container_exists(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a Docker container is only run if no other Docker container
+        exists with the same name.
+        """
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = True
+        container_mock.return_value = container_instance_mock
+
+        docker_client = DockerClient()
+        container = docker_client.run_container(
+            'test_docker_container_name',
+            'test_docker_image_name'
+        )
+        self.assertEqual(container, container_instance_mock)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_run_container_unexistent(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to run Docker containers works as expected.
+        """
+        test_docker_container_instance = docker.models.containers.Container()
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = False
+        container_mock.return_value = container_instance_mock
+
+        docker_client_mock = MagicMock()
+        docker_client_mock.containers.run.return_value = test_docker_container_instance
+        docker_mock.return_value = docker_client_mock
+
+        docker_client = DockerClient()
+        container = docker_client.run_container(
+            'test_docker_container_name',
+            'test_docker_image_name'
+        )
+        self.assertEqual(container, test_docker_container_instance)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_docker_run_container_call(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the call to the Docker API is done properly when running Docker containers.
+        """
+        test_docker_container_name = 'test_docker_container_name'
+        test_docker_image = 'test_docker_image'
+        test_docker_container_env = ['ENV1=VALUE1']
+        test_docker_container_network = 'test_docker_network_name'
+        test_docker_container_ports = None
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = False
+        container_mock.return_value = container_instance_mock
+
+        docker_client_mock = MagicMock()
+        docker_mock.return_value = docker_client_mock
+
+        docker_client = DockerClient()
+        docker_client.run_container(
+            test_docker_container_name,
+            test_docker_image,
+            test_docker_container_env,
+            test_docker_container_network,
+            test_docker_container_ports
+        )
+
+        docker_client_mock.containers.run.assert_called_once_with(
+            test_docker_image,
+            detach=True,
+            hostname=test_docker_container_name,
+            name=test_docker_container_name,
+            environment=test_docker_container_env,
+            network=test_docker_container_network,
+            ports=test_docker_container_ports
+        )
 
 
 if __name__ == '__main__':

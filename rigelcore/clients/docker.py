@@ -6,7 +6,7 @@ from rigelcore.exceptions import (
     InvalidDockerImageNameError,
 )
 from rigelcore.loggers import DockerLogPrinter
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 
 class DockerClient:
@@ -140,23 +140,25 @@ class DockerClient:
         except docker.errors.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
-    def network_exists(self, name: str) -> bool:
+    def get_network(self, name: str) -> Optional[docker.models.networks.Network]:
         """
-        Verify if a Docker network already exists.
+        Get a Docker network.
 
         :type name: string
         :param name: The name of the Docker network.
 
-        :rtype: bool
-        :return: True if a Docker network already exists
-        with the provided name. False otherwise.
+        :rtype: Optional[docker.models.networks.Network]
+        :return: The Docker network with the specified name.
         """
         try:
-            return bool(self.client.networks.list(names=[name]))
+            listing = self.client.networks.list(names=[name])
+            if listing:
+                return listing[0]
+            return None
         except docker.errors.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
-    def create_network(self, name: str, driver: str) -> None:
+    def create_network(self, name: str, driver: str) -> docker.models.networks.Network:
         """
         Create a Docker network.
 
@@ -164,12 +166,101 @@ class DockerClient:
         :param name: The name of the Docker network.
         :type driver: string
         :param driver: Name of driver used to create the network.
+
+        :rtype: docker.models.networks.Network
+        :return: The Docker network with the specified name.
         """
-        if not self.network_exists(name):
+        network = self.get_network(name)
+        if not network:
             try:
-                self.client.networks.create(
-                    name,
-                    driver=driver
+                return self.client.networks.create(name, driver=driver)
+            except docker.errors.DockerException as exception:
+                raise DockerAPIError(exception=exception)
+        return network  # return already existing network
+
+    def remove_network(self, name: str) -> None:
+        """
+        Remove a Docker network.
+
+        :type name: string
+        :param name: The name of the Docker network.
+        """
+        network = self.get_network(name)
+        if network:
+            try:
+                network.remove()
+            except docker.errors.DockerException as exception:
+                raise DockerAPIError(exception=exception)
+
+    def get_container(self, name: str) -> Optional[docker.models.containers.Container]:
+        """
+        Get a Docker container.
+
+        :type name: string
+        :param name: The name of the Docker container.
+
+        :rtype: Optional[docker.models.containers.Container]
+        :return: The Docker container with the specified name.
+        """
+        try:
+            listing = self.client.containers.list(filters={'name': name})
+            if listing:
+                return listing[0]
+            return None
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
+
+    def run_container(
+        self,
+        name: str,
+        image: str,
+        environment: Optional[List[str]] = None,
+        network: Optional[str] = None,
+        ports: Optional[Dict[str, Optional[int]]] = None
+    ) -> docker.models.containers.Container:
+        """
+        Run a Docker container.
+
+        :type name: string
+        :param name: The Docker container name.
+        :type image: string
+        :param name: The Docker image.
+        :type environment: Optional[List[str]]
+        :param environment: The list of environment variables to set inside the container.
+        :type network: Optional[str]
+        :param network: The name of the network to connect the container to.
+        :type ports: Optional[Dict[str, Optional[int]]]
+        :param ports: The container ports to expose.
+
+        :rtype: docker.models.containers.Container
+        :return: The created Docker container
+        """
+        container = self.get_container(name)
+        if not container:
+            try:
+                return self.client.containers.run(
+                    image,
+                    detach=True,
+                    hostname=name,
+                    name=name,
+                    environment=environment,
+                    network=network,
+                    ports=ports
                 )
+            except docker.errors.DockerException as exception:
+                raise DockerAPIError(exception=exception)
+        return container  # return already existing container
+
+    def remove_container(self, name: str) -> None:
+        """
+        Remove a Docker container.
+
+        :type name: string
+        :param name: The name of the Docker container.
+        """
+        container = self.get_container(name)
+        if container:
+            try:
+                container.remove(v=True, force=True)
             except docker.errors.DockerException as exception:
                 raise DockerAPIError(exception=exception)
