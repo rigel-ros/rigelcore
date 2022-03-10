@@ -214,6 +214,7 @@ class DockerClient:
         self,
         name: str,
         image: str,
+        command: Optional[str] = None,
         environment: Optional[List[str]] = None,
         network: Optional[str] = None,
         ports: Optional[Dict[str, Optional[int]]] = None
@@ -225,6 +226,8 @@ class DockerClient:
         :param name: The Docker container name.
         :type image: string
         :param name: The Docker image.
+        :type command: Optional[str]
+        :param command: The command to be executed inside the container.
         :type environment: Optional[List[str]]
         :param environment: The list of environment variables to set inside the container.
         :type network: Optional[str]
@@ -240,10 +243,11 @@ class DockerClient:
             try:
                 return self.client.containers.run(
                     image,
+                    command=command,
                     detach=True,
+                    environment=environment,
                     hostname=name,
                     name=name,
-                    environment=environment,
                     network=network,
                     ports=ports
                 )
