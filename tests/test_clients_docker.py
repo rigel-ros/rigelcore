@@ -688,6 +688,60 @@ class DockerClientTesting(unittest.TestCase):
             ports=test_docker_container_ports
         )
 
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    def test_wait_container_status_unexistent(self, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if a Docker container to watch does not exist.
+        """
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = False
+        container_mock.return_value = container_instance_mock
+        with self.assertRaises(DockerAPIError):
+            docker_client = DockerClient()
+            docker_client.wait_for_container_status('test_container_name', 'test_status')
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    @patch('rigelcore.clients.docker.time.sleep')
+    def test_wait_container_status_timeout(self, sleep_mock: Mock, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if a Docker container to watch does not exist.
+        """
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = True
+        container_instance_mock.status = 'test_invalid_status'
+        container_mock.return_value = container_instance_mock
+        with self.assertRaises(DockerAPIError):
+            docker_client = DockerClient()
+            docker_client.wait_for_container_status('test_container_name', 'test_status')
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    @patch('rigelcore.clients.docker.DockerClient.get_container')
+    @patch('rigelcore.clients.docker.time.sleep')
+    def test_wait_container_status_loop(self, sleep_mock: Mock, container_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to wait for a given container status value
+        to change works as expected.
+        """
+
+        test_desired_status = 'test_desired_status'
+
+        container_instance_mock = MagicMock()
+        container_instance_mock.__bool__.return_value = True
+        container_instance_mock.status = 'test_invalid_status'
+        container_mock.return_value = container_instance_mock
+
+        def update_container_status(time: int) -> None:
+            container_instance_mock.status = test_desired_status
+        sleep_mock.side_effect = update_container_status
+
+        docker_client = DockerClient()
+        docker_client.wait_for_container_status('test_container_name', test_desired_status)
+        sleep_mock.assert_called_once_with(docker_client.DOCKER_RUN_WAIT_STATUS)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,11 +1,12 @@
 import docker
+import time
 from rigelcore.exceptions import (
     DockerAPIError,
     DockerOperationError,
     InvalidDockerClientInstanceError,
     InvalidDockerImageNameError,
 )
-from rigelcore.loggers import DockerLogPrinter
+from rigelcore.loggers import DockerLogPrinter, MessageLogger
 from typing import Dict, List, Optional
 
 
@@ -14,6 +15,10 @@ class DockerClient:
     A wrapper class for the docker.client.DockerClient.
     Keeps the same functionality but allows for error handling that suits better Rigel.
     """
+
+    DOCKER_CONTAINER_ID_DISPLAY_SIZE: int = 12
+    DOCKER_RUN_TIMEOUT: int = 120  # seconds
+    DOCKER_RUN_WAIT_STATUS: int = 3  # seconds
 
     # A Docker client instance.
     client: docker.client.DockerClient
@@ -268,3 +273,44 @@ class DockerClient:
                 container.remove(v=True, force=True)
             except docker.errors.DockerException as exception:
                 raise DockerAPIError(exception=exception)
+
+    def wait_for_container_status(
+        self,
+        name: str,
+        status: str
+            ) -> None:
+        """
+        Wait for a container status to change to a desired value.
+
+        :type name: string
+        :param name: The name of the container to watch.
+        :type status: string
+        :param status: The desires container status.
+        """
+        logger = MessageLogger()
+
+        elapsed_time = 0  # seconds
+        while True:
+            container = self.get_container(name)
+            if container:
+                if elapsed_time < self.DOCKER_RUN_TIMEOUT:
+                    if container.status == status:
+                        return
+                    time.sleep(self.DOCKER_RUN_WAIT_STATUS)
+                    elapsed_time = elapsed_time + self.DOCKER_RUN_WAIT_STATUS
+                    logger.warning('Waiting for status of container {} to become "{}". Current status is "{}".'.format(
+                        container.id[:self.DOCKER_CONTAINER_ID_DISPLAY_SIZE],
+                        status,
+                        container.status
+                    ))
+                else:
+                    raise DockerAPIError(exception=docker.errors.DockerException(
+                        'Timeout while waiting for status of container {} to become "{}".'.format(
+                            container.id[:self.DOCKER_CONTAINER_ID_DISPLAY_SIZE],
+                            status
+                        )
+                    ))
+            else:
+                raise DockerAPIError(exception=docker.errors.DockerException(
+                    f'Unable to watch over status of container "{name}" since it does not exist.'
+                ))
