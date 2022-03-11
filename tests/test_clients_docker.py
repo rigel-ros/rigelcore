@@ -644,7 +644,8 @@ class DockerClientTesting(unittest.TestCase):
             environment=None,
             name=test_docker_container_name,
             network=None,
-            ports=None
+            ports=None,
+            restart_policy=None
         )
 
     @patch('rigelcore.clients.docker.docker.from_env')
@@ -659,6 +660,7 @@ class DockerClientTesting(unittest.TestCase):
         test_docker_container_env = ['ENV1=VALUE1']
         test_docker_container_network = 'test_docker_network_name'
         test_docker_container_ports = None
+        test_docker_container_restart_policy = {'Name': 'test_restart_policy_name'}
 
         container_instance_mock = MagicMock()
         container_instance_mock.__bool__.return_value = False
@@ -674,7 +676,8 @@ class DockerClientTesting(unittest.TestCase):
             command=test_docker_container_command,
             environment=test_docker_container_env,
             network=test_docker_container_network,
-            ports=test_docker_container_ports
+            ports=test_docker_container_ports,
+            restart_policy=test_docker_container_restart_policy
         )
 
         docker_client_mock.containers.run.assert_called_once_with(
@@ -685,7 +688,8 @@ class DockerClientTesting(unittest.TestCase):
             environment=test_docker_container_env,
             name=test_docker_container_name,
             network=test_docker_container_network,
-            ports=test_docker_container_ports
+            ports=test_docker_container_ports,
+            restart_policy=test_docker_container_restart_policy
         )
 
     @patch('rigelcore.clients.docker.docker.from_env')

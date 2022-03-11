@@ -222,7 +222,8 @@ class DockerClient:
         command: Optional[str] = None,
         environment: Optional[List[str]] = None,
         network: Optional[str] = None,
-        ports: Optional[Dict[str, Optional[int]]] = None
+        ports: Optional[Dict[str, Optional[int]]] = None,
+        restart_policy: Optional[Dict[str, str]] = None
     ) -> docker.models.containers.Container:
         """
         Run a Docker container.
@@ -239,6 +240,8 @@ class DockerClient:
         :param network: The name of the network to connect the container to.
         :type ports: Optional[Dict[str, Optional[int]]]
         :param ports: The container ports to expose.
+        :type restart_policy: Optional[Dict[str, str]]
+        :param restart_policy: Configuration regarding when to restart the container.
 
         :rtype: docker.models.containers.Container
         :return: The created Docker container
@@ -254,7 +257,8 @@ class DockerClient:
                     hostname=name,
                     name=name,
                     network=network,
-                    ports=ports
+                    ports=ports,
+                    restart_policy=restart_policy
                 )
             except docker.errors.DockerException as exception:
                 raise DockerAPIError(exception=exception)
