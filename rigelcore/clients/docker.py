@@ -276,9 +276,9 @@ class DockerClient:
                 raise DockerAPIError(exception=exception)
 
     def wait_for_container_status(
-        self,
-        name: str,
-        status: str
+            self,
+            name: str,
+            status: str
             ) -> None:
         """
         Wait for a container status to change to a desired value.
