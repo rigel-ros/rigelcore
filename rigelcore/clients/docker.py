@@ -7,7 +7,7 @@ from rigelcore.exceptions import (
     InvalidDockerImageNameError,
 )
 from rigelcore.loggers import DockerLogPrinter, MessageLogger
-from typing import Dict, List, Optional
+from typing import Any, Dict, Optional
 
 
 class DockerClient:
@@ -236,51 +236,27 @@ class DockerClient:
         self,
         name: str,
         image: str,
-        command: Optional[str] = None,
-        environment: Optional[List[str]] = None,
-        network: Optional[str] = None,
-        ports: Optional[Dict[str, Optional[int]]] = None,
-        restart_policy: Optional[Dict[str, str]] = None,
-        volumes: Optional[List[str]] = None
+        **kwargs: Any
     ) -> docker.models.containers.Container:
         """
-        Run a Docker container.
+        Run a Docker container with a given name.
 
         :type name: string
         :param name: The Docker container name.
         :type image: string
         :param name: The Docker image.
-        :type command: Optional[str]
-        :param command: The command to be executed inside the container.
-        :type environment: Optional[List[str]]
-        :param environment: The list of environment variables to set inside the container.
-        :type network: Optional[str]
-        :param network: The name of the network to connect the container to.
-        :type ports: Optional[Dict[str, Optional[int]]]
-        :param ports: The container ports to expose.
-        :type restart_policy: Optional[Dict[str, str]]
-        :param restart_policy: Configuration regarding when to restart the container.
-        :type volumes: Optional[List[str]]
-        :param volumes: The list of volumes to be mounted inside the container.
+        :type kwargs: Dict[str, Any]
+        :param kwargs: Keyword arguments for the Docker API. Consult the Docker SDK for Python
+        documentation for more information (https://docker-py.readthedocs.io/en/stable/containers.html)
 
         :rtype: docker.models.containers.Container
         :return: The created Docker container
         """
         container = self.get_container(name)
         if not container:
+            kwargs['name'] = name
             try:
-                return self.client.containers.run(
-                    image,
-                    command=command,
-                    detach=True,
-                    environment=environment,
-                    hostname=name,
-                    name=name,
-                    network=network,
-                    ports=ports,
-                    restart_policy=restart_policy,
-                    volumes=volumes
-                )
+                return self.client.containers.run(image, **kwargs)
             except docker.errors.DockerException as exception:
                 raise DockerAPIError(exception=exception)
         return container  # return already existing container

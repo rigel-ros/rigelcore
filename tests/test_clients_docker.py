@@ -663,54 +663,17 @@ class DockerClientTesting(unittest.TestCase):
 
     @patch('rigelcore.clients.docker.docker.from_env')
     @patch('rigelcore.clients.docker.DockerClient.get_container')
-    def test_docker_run_container_call_default_values(self, container_mock: Mock, docker_mock: Mock) -> None:
-        """
-        Ensure that the call to the Docker API is done properly when running Docker containers
-        with default values.
-        """
-        test_docker_container_name = 'test_docker_container_name'
-        test_docker_image = 'test_docker_image'
-
-        container_instance_mock = MagicMock()
-        container_instance_mock.__bool__.return_value = False
-        container_mock.return_value = container_instance_mock
-
-        docker_client_mock = MagicMock()
-        docker_mock.return_value = docker_client_mock
-
-        docker_client = DockerClient()
-        docker_client.run_container(
-            test_docker_container_name,
-            test_docker_image,
-        )
-
-        docker_client_mock.containers.run.assert_called_once_with(
-            test_docker_image,
-            command=None,
-            detach=True,
-            hostname=test_docker_container_name,
-            environment=None,
-            name=test_docker_container_name,
-            network=None,
-            ports=None,
-            restart_policy=None,
-            volumes=None
-        )
-
-    @patch('rigelcore.clients.docker.docker.from_env')
-    @patch('rigelcore.clients.docker.DockerClient.get_container')
     def test_docker_run_container_call(self, container_mock: Mock, docker_mock: Mock) -> None:
         """
         Ensure that the call to the Docker API is done properly when running Docker containers.
         """
+
         test_docker_container_name = 'test_docker_container_name'
         test_docker_image = 'test_docker_image'
-        test_docker_container_command = 'test_docker_command'
-        test_docker_container_env = ['ENV1=VALUE1']
-        test_docker_container_network = 'test_docker_network_name'
-        test_docker_container_ports = None
-        test_docker_container_restart_policy = {'Name': 'test_restart_policy_name'}
-        test_docker_container_volumes = ['test_container_path:test_host_path']
+        test_docker_kwargs = {
+            "test_kwargs_field_str": 'test_docker_command',
+            "test_kwargs_field_bool":  False,
+        }
 
         container_instance_mock = MagicMock()
         container_instance_mock.__bool__.return_value = False
@@ -723,25 +686,13 @@ class DockerClientTesting(unittest.TestCase):
         docker_client.run_container(
             test_docker_container_name,
             test_docker_image,
-            command=test_docker_container_command,
-            environment=test_docker_container_env,
-            network=test_docker_container_network,
-            ports=test_docker_container_ports,
-            restart_policy=test_docker_container_restart_policy,
-            volumes=test_docker_container_volumes
+            **test_docker_kwargs
         )
 
+        test_docker_kwargs['name'] = test_docker_container_name
         docker_client_mock.containers.run.assert_called_once_with(
             test_docker_image,
-            command=test_docker_container_command,
-            detach=True,
-            hostname=test_docker_container_name,
-            environment=test_docker_container_env,
-            name=test_docker_container_name,
-            network=test_docker_container_network,
-            ports=test_docker_container_ports,
-            restart_policy=test_docker_container_restart_policy,
-            volumes=test_docker_container_volumes
+            **test_docker_kwargs
         )
 
     @patch('rigelcore.clients.docker.docker.from_env')
