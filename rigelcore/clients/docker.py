@@ -59,7 +59,44 @@ class DockerClient:
                     raise DockerOperationError(msg=log['error'])
                 break
 
-    def build(self, path: str, dockerfile: str, image: str, buildargs: Dict[str, str]) -> None:
+    def login(self, registry: str, username: str, password: str) -> None:
+        """
+        Authenticate user with a given Docker image regisry.
+
+        :type registry: string
+        :param registry: The registry to authenticate with.
+        :type username: string
+        :param username: The registry username.
+        :type password: string
+        :param password: The registry password.
+        """
+        try:
+            self.client.api.login(
+                username=username,
+                password=password,
+                registry=registry
+            )
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
+
+    def get_image(self, name: str) -> Optional[docker.models.images.Image]:
+        """
+        Get an existing Docker image.
+
+        :type name: string
+        :param name: The Docker image name.
+        :rtype: Optional[docker.models.images.Image]
+        :return: The Docker image if existent. None otherwise.
+        """
+        try:
+            image = self.client.images.get(name)
+            return image
+        except docker.errors.ImageNotFound:  # Docker images does not exist locally
+            return None
+        except docker.errors.DockerException as exception:
+            raise DockerAPIError(exception=exception)
+
+    def build_image(self, path: str, dockerfile: str, image: str, buildargs: Dict[str, str]) -> None:
         """
         Build a new Docker image.
 
@@ -85,7 +122,7 @@ class DockerClient:
         except docker.errors.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
-    def tag(self, source_image: str, target_image: str) -> None:
+    def tag_image(self, source_image: str, target_image: str) -> None:
         """
         Create a Docker image that references an existing Docker image.
 
@@ -112,27 +149,7 @@ class DockerClient:
         except docker.errors.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
-    def login(self, registry: str, username: str, password: str) -> None:
-        """
-        Authenticate user with a given Docker image regisry.
-
-        :type registry: string
-        :param registry: The registry to authenticate with.
-        :type username: string
-        :param username: The registry username.
-        :type password: string
-        :param password: The registry password.
-        """
-        try:
-            self.client.api.login(
-                username=username,
-                password=password,
-                registry=registry
-            )
-        except docker.errors.DockerException as exception:
-            raise DockerAPIError(exception=exception)
-
-    def push(self, image: str) -> None:
+    def push_image(self, image: str) -> None:
         """
         Push a Docker image to a Docker image registry.
 

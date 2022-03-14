@@ -30,10 +30,58 @@ class DockerClientTesting(unittest.TestCase):
         Ensure that an instance of DockerAPIError is thrown
         if an error while trying to connect to the Docker daemon.
         """
-        docker_mock.side_effect = docker.errors.DockerException
+        docker_mock.side_effect = docker.errors.DockerException()
 
         with self.assertRaises(DockerAPIError):
             DockerClient()
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_image_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while searching for a Docker image using the Docker API.
+        """
+        test_exception = docker.errors.DockerException()
+
+        docker_client_mock = MagicMock()
+        docker_client_mock.images.get.side_effect = test_exception
+        docker_mock.return_value = docker_client_mock
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.get_image('test_docker_image_name')
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_image_none(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to retrieve existing Docker images
+        works as expected when the specified Docker image does not exist.
+        """
+        test_exception = docker.errors.ImageNotFound(message='test_error_message')
+
+        docker_client_mock = MagicMock()
+        docker_client_mock.images.get.side_effect = test_exception
+        docker_mock.return_value = docker_client_mock
+
+        docker_client = DockerClient()
+        image = docker_client.get_image('test_docker_image_name')
+        self.assertIsNone(image)
+
+    @patch('rigelcore.clients.docker.docker.from_env')
+    def test_docker_get_image(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to retrieve existing Docker images works as expected.
+        """
+        test_docker_image = docker.models.images.Image()
+
+        docker_client_mock = MagicMock()
+        docker_client_mock.images.get.return_value = test_docker_image
+        docker_mock.return_value = docker_client_mock
+
+        docker_client = DockerClient()
+        image = docker_client.get_image('test_docker_image_name')
+        self.assertEqual(image, test_docker_image)
 
     @patch('rigelcore.clients.docker.DockerClient.print_logs')
     @patch('rigelcore.clients.docker.docker.from_env')
@@ -53,7 +101,7 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.return_value = docker_api_mock
 
         docker_client = DockerClient()
-        docker_client.build(test_context_path, test_dockerfile_path, test_image, test_buildargs)
+        docker_client.build_image(test_context_path, test_dockerfile_path, test_image, test_buildargs)
 
         docker_api_mock.api.build.assert_called_once_with(
             path=test_context_path,
@@ -80,7 +128,7 @@ class DockerClientTesting(unittest.TestCase):
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
-            docker_client.build(
+            docker_client.build_image(
                 'test_context_path',
                 'test_dockerfile_path',
                 'test_image',
@@ -96,7 +144,7 @@ class DockerClientTesting(unittest.TestCase):
         test_target_image = 'invalid:image:name'
         with self.assertRaises(InvalidDockerImageNameError) as context:
             docker_client = DockerClient()
-            docker_client.tag('test_source_image', test_target_image)
+            docker_client.tag_image('test_source_image', test_target_image)
         self.assertEqual(context.exception.kwargs['image'], test_target_image)
 
     @patch('rigelcore.clients.docker.docker.from_env')
@@ -113,7 +161,7 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.return_value = docker_api_mock
 
         docker_client = DockerClient()
-        docker_client.tag(test_source_image, test_target_image)
+        docker_client.tag_image(test_source_image, test_target_image)
 
         docker_api_mock.api.tag.assert_called_once_with(
             image=test_source_image,
@@ -137,7 +185,7 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.return_value = docker_api_mock
 
         docker_client = DockerClient()
-        docker_client.tag(test_source_image, complete_test_target_image)
+        docker_client.tag_image(test_source_image, complete_test_target_image)
 
         docker_api_mock.api.tag.assert_called_once_with(
             image=test_source_image,
@@ -160,7 +208,7 @@ class DockerClientTesting(unittest.TestCase):
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
-            docker_client.tag(
+            docker_client.tag_image(
                 'test_source_image',
                 'test_target_image'
             )
@@ -221,7 +269,7 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.return_value = docker_api_mock
 
         docker_client = DockerClient()
-        docker_client.push(test_image)
+        docker_client.push_image(test_image)
 
         docker_api_mock.api.push.assert_called_once_with(
             test_image,
@@ -246,7 +294,7 @@ class DockerClientTesting(unittest.TestCase):
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
-            docker_client.push('test_image')
+            docker_client.push_image('test_image')
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.DockerLogPrinter.log')
