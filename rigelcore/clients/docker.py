@@ -240,7 +240,8 @@ class DockerClient:
         environment: Optional[List[str]] = None,
         network: Optional[str] = None,
         ports: Optional[Dict[str, Optional[int]]] = None,
-        restart_policy: Optional[Dict[str, str]] = None
+        restart_policy: Optional[Dict[str, str]] = None,
+        volumes: Optional[List[str]] = None
     ) -> docker.models.containers.Container:
         """
         Run a Docker container.
@@ -259,6 +260,8 @@ class DockerClient:
         :param ports: The container ports to expose.
         :type restart_policy: Optional[Dict[str, str]]
         :param restart_policy: Configuration regarding when to restart the container.
+        :type volumes: Optional[List[str]]
+        :param volumes: The list of volumes to be mounted inside the container.
 
         :rtype: docker.models.containers.Container
         :return: The created Docker container
@@ -275,7 +278,8 @@ class DockerClient:
                     name=name,
                     network=network,
                     ports=ports,
-                    restart_policy=restart_policy
+                    restart_policy=restart_policy,
+                    volumes=volumes
                 )
             except docker.errors.DockerException as exception:
                 raise DockerAPIError(exception=exception)
