@@ -1,6 +1,4 @@
 from . import clients  # noqa: F401
-from . import loggers  # noqa: F401
-from . import models  # noqa: F401
 from .exceptions import (  # noqa: F401
     RigelError,
     DockerOperationError,
@@ -10,4 +8,7 @@ from .exceptions import (  # noqa: F401
     UndeclaredEnvironmentVariableError,
     UndeclaredGlobalVariableError
 )
+from . import loggers  # noqa: F401
+from . import models  # noqa: F401
+
 __version__ = '0.1.0'
