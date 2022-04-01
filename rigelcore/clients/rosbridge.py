@@ -12,8 +12,8 @@ class ROSBridgeClient:
     A client for the ROS bridge websocket server.
     """
 
-    __handlers: Dict[Tuple[str, str], List[ROS_MESSAGE_HANDLER_TYPE]] = {}
-    __subscribers: Dict[Tuple[str, str], roslibpy.core.Topic] = {}
+    handlers: Dict[Tuple[str, str], List[ROS_MESSAGE_HANDLER_TYPE]]
+    subscribers: Dict[Tuple[str, str], roslibpy.core.Topic]
 
     def __init__(self, host: str = 'localhost', port: int = 9090) -> None:
         """
@@ -25,6 +25,9 @@ class ROSBridgeClient:
         :type port: int
         :param port: The ROS bridge websocket port. Defaults to 9090.
         """
+        self.handlers = {}
+        self.subscribers = {}
+
         self.__rosbridge_client = roslibpy.Ros(host=host, port=port)
         self.__rosbridge_client.run()
 
@@ -44,8 +47,7 @@ class ROSBridgeClient:
         """
 
         def handler_function(message: ROS_MESSAGE_TYPE) -> None:
-            for message_handler in self.__handlers[(topic, message_type)]:
-                print(f'Forwarding ROS message to handler {message_handler}')
+            for message_handler in self.handlers[(topic, message_type)]:
                 message_handler(message)
 
         return handler_function
@@ -64,18 +66,18 @@ class ROSBridgeClient:
         key = (topic, message_type)
 
         # Verify if any other handler already exists for the same topic and message type.
-        if key in self.__handlers:
+        if key in self.handlers:
 
-            if handler not in self.__handlers[key]:
-                self.__handlers[key].append(handler)
+            if handler not in self.handlers[key]:
+                self.handlers[key].append(handler)
 
         else:  # register provided handler and create new subscriber for the specified topic and message type.
 
-            self.__handlers[key] = [handler]
+            self.handlers[key] = [handler]
 
             subscriber = roslibpy.Topic(self.__rosbridge_client, topic, message_type)
             subscriber.subscribe(self.__create_generic_message_handler(topic, message_type))
-            self.__subscribers[key] = subscriber
+            self.subscribers[key] = subscriber
 
     def remove_message_handler(self, topic: str, message_type: str, handler: ROS_MESSAGE_HANDLER_TYPE) -> None:
         """
@@ -89,23 +91,23 @@ class ROSBridgeClient:
         :param handler: The message handler function to be removed.
         """
         key = (topic, message_type)
-        if key in self.__handlers:
-            if handler in self.__handlers[key]:
-                self.__handlers[key].remove(handler)
+        if key in self.handlers:
+            if handler in self.handlers[key]:
+                self.handlers[key].remove(handler)
 
                 # Verify if any handler is still registered.
-                if not self.__handlers[key]:
+                if not self.handlers[key]:
 
-                    del self.__handlers[key]
-                    self.__subscribers[key].unsubscribe()
-                    del self.__subscribers[key]
+                    del self.handlers[key]
+                    self.subscribers[key].unsubscribe()
+                    del self.subscribers[key]
 
     def close(self) -> None:
         """
         Close connection between to the ROS bridge websocket server.
         """
-        del self.__handlers
-        for _, subscriber in self.__subscribers.items():
+        self.handlers = {}
+        for _, subscriber in self.subscribers.items():
             subscriber.unsubscribe()
-        del self.__subscribers
+        self.subscribers = {}
         self.__rosbridge_client.terminate()
