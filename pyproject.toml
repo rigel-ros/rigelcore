@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rigelcore"
-version = "0.1.13"
+version = "0.1.14"
 description = "A common interface for Rigel and all its plugins."
 homepage = "https://gitlab.inesctec.pt/pedro.m.melo/rigelcore"
 keywords = ["docker", "ros", "cloud", "robotics"]
@@ -21,6 +21,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 docker = "^5.0.3"
+hpl-specs = {git = "git@gitlab.inesctec.pt:pedro.m.melo/hpl.git"}
 pydantic = "^1.9.0"
 python = "^3.8"
 rich = "^11.2.0"
