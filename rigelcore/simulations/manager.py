@@ -1,21 +1,21 @@
-from .requirement import SimulationRequirement
+from .requirement import SimulationRequirementNode
 from rigelcore.clients import ROSBridgeClient
 from typing import List
 
 
 class SimulationRequirementsManager:
 
-    requirements: List[SimulationRequirement]
+    requirements: List[SimulationRequirementNode]
 
     def __init__(self) -> None:
         self.requirements = []
 
-    def add_simulation_requirement(self, requirement: SimulationRequirement) -> None:
+    def add_simulation_requirement(self, requirement: SimulationRequirementNode) -> None:
         """
         Add a simulation requirement.
 
         :param requirement: The simulation requirement to be added.
-        :type requirement: SimulationRequirement
+        :type requirement: SimulationRequirementNode
         """
         self.requirements.append(requirement)
 
