@@ -1,5 +1,5 @@
 from .callback import CallbackGenerator
-from .requirement import (
+from .requirements import (
     AbsenceSimulationRequirementNode,
     DisjointSimulationRequirementNode,
     ExistenceSimulationRequirementNode,

@@ -1,4 +1,4 @@
-from .requirement import SimulationRequirementNode
+from .requirements import SimulationRequirementNode
 from rigelcore.clients import ROSBridgeClient
 from typing import List
 
