@@ -98,15 +98,15 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         :type node: HplPattern
         """
         if node.is_existence:
-            pattern_node = ExistenceSimulationRequirementNode()
+            pattern_node = ExistenceSimulationRequirementNode(timeout=node.max_time)
         elif node.is_absence:
-            pattern_node = AbsenceSimulationRequirementNode()
+            pattern_node = AbsenceSimulationRequirementNode(timeout=node.max_time)
         elif node.is_response:
-            pattern_node = ResponseSimulationRequirementNode()
+            pattern_node = ResponseSimulationRequirementNode(timeout=node.max_time)
         elif node.is_requirement:
-            pattern_node = RequirementSimulationRequirementNode()
+            pattern_node = RequirementSimulationRequirementNode(timeout=node.max_time)
         elif node.is_prevention:
-            pattern_node = PreventionSimulationRequirementNode()
+            pattern_node = PreventionSimulationRequirementNode(timeout=node.max_time)
 
         for child in node.children():
             child_node = self.extract_requirement_node(child)
