@@ -1,4 +1,4 @@
-from rigelcore.simulations import Command, CommandBuilder, CommandType
+from rigelcore.simulations.command import Command, CommandBuilder, CommandType
 from .node import SimulationRequirementNode
 
 
@@ -26,7 +26,7 @@ class DisjointSimulationRequirementNode(SimulationRequirementNode):
 
     def handle_children_status_change(self) -> None:
         """
-        Handle STATUS_CHANGE commands sent by chilren nodes.
+        Handle STATUS_CHANGE commands sent by children nodes.
         Whenever a child changes state a disjoint requirement node must check its satisfability.
         """
         if self.assess_children_nodes() != self.satisfied:  # only consider state changes
@@ -55,5 +55,5 @@ class DisjointSimulationRequirementNode(SimulationRequirementNode):
         :param command: Received dowstream command.
         :type command: Command
         """
-        if command.type == CommandType.ROSBRIDGE_CONNECT:
+        if command.type in [CommandType.ROSBRIDGE_CONNECT, CommandType.ROSBRIDGE_DISCONNECT]:
             self.send_downstream_cmd(command)

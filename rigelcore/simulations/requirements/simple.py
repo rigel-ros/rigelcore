@@ -1,5 +1,5 @@
 from rigelcore.clients import ROSBridgeClient
-from rigelcore.simulations import Command, CommandBuilder, CommandType
+from rigelcore.simulations.command import Command, CommandBuilder, CommandType
 from typing import Any, Callable, Dict
 from .node import SimulationRequirementNode
 
@@ -85,6 +85,10 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         """
         if self.ros_message_callback(message) != self.satisfied:  # only consider state changes
             self.satisfied = not self.satisfied
+
+            # Once a ROS message satisfying the callback condition is received then there's no way back.
+            # Stop listening for incoming ROS messages.
+            self.disconnect_from_rosbridge()
 
             # Inform father node about state change.
             command = CommandBuilder.build_status_change_cmd()

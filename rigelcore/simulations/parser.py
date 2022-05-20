@@ -17,7 +17,6 @@ from hpl.visitor import (
     HplPattern,
     HplSimpleEvent
 )
-from typing import List
 from sys import exit
 
 
@@ -26,14 +25,14 @@ class SimulationRequirementsVisitor(HplAstVisitor):
     A class to extract simulation requirements from the nodes of a transformed HPL AST.
     """
 
-    requirements: List[SimulationRequirementNode]
+    requirement: SimulationRequirementNode
 
     def __init__(self) -> None:
         """
         Class constructor.
         Initializes internal data structures.
         """
-        self.requirements = []
+        self.requirement = None
 
     def __initialize_disjunction_requirement_event(self, event: HplEventDisjunction) -> SimulationRequirementNode:
         """
@@ -98,22 +97,20 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         :type node: HplPattern
         """
         if node.is_existence:
-            pattern_node = ExistenceSimulationRequirementNode(timeout=node.max_time)
+            self.requirement = ExistenceSimulationRequirementNode(timeout=node.max_time)
         elif node.is_absence:
-            pattern_node = AbsenceSimulationRequirementNode(timeout=node.max_time)
+            self.requirement = AbsenceSimulationRequirementNode(timeout=node.max_time)
         elif node.is_response:
-            pattern_node = ResponseSimulationRequirementNode(timeout=node.max_time)
+            self.requirement = ResponseSimulationRequirementNode(timeout=node.max_time)
         elif node.is_requirement:
-            pattern_node = RequirementSimulationRequirementNode(timeout=node.max_time)
+            self.requirement = RequirementSimulationRequirementNode(timeout=node.max_time)
         elif node.is_prevention:
-            pattern_node = PreventionSimulationRequirementNode(timeout=node.max_time)
+            self.requirement = PreventionSimulationRequirementNode(timeout=node.max_time)
 
         for child in node.children():
             child_node = self.extract_requirement_node(child)
-            child_node.father = pattern_node
-            pattern_node.children.append(child_node)
-
-        self.requirements.append(pattern_node)
+            child_node.father = self.requirement
+            self.requirement.children.append(child_node)
 
 
 class SimulationRequirementsParser:
@@ -128,15 +125,15 @@ class SimulationRequirementsParser:
         """
         self.__parser = property_parser()
 
-    def parse(self, hpl_requirement: str) -> List[SimulationRequirementNode]:
+    def parse(self, hpl_requirement: str) -> SimulationRequirementNode:
         """
         Parse a single simulation requirement.
         All simulation requirements must be expressed in the HPL language.
 
         :param hpl_requirement: A simulation requirement expressed in the HPL language.
         :type hpl_requirement: str
-        :return: The list of declared simulation requirements.
-        :rtype: List[SimulationRequirementNode]
+        :return: A tree of simulation requirements.
+        :rtype: SimulationRequirementsManager
         """
         visitor = SimulationRequirementsVisitor()
 
@@ -145,4 +142,4 @@ class SimulationRequirementsParser:
         for node in ast.iterate():
             node.accept(visitor)
 
-        return visitor.requirements
+        return visitor.requirement

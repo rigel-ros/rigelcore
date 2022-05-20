@@ -1,12 +1,14 @@
+from __future__ import annotations
 from enum import Enum
 from rigelcore.clients import ROSBridgeClient
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 class CommandType(Enum):
     ROSBRIDGE_CONNECT: int = 1
     ROSBRIDGE_DISCONNECT: int = 2
     STATUS_CHANGE: int = 3
+    STOP_SIMULATON: int = 4
 
 
 class Command:
@@ -16,6 +18,52 @@ class Command:
     def __init__(self, type: CommandType, data: Dict[str, Any]) -> None:
         self.type = type
         self.data = data
+
+
+class CommandHandler:
+    """
+    A class for all objects that are able to handle commands and exchange command between themselves.
+    """
+
+    # Command handlers form a hierarchical tree.
+    # For commands to be exchanged between tree layers
+    # each node must have a local notion of the tree structure.
+    father: CommandHandler
+    children: List[CommandHandler]
+
+    # All command handlers must implement a mechanism
+    # to handle upstream commands sent by their respective children nodes.
+    def handle_upstream_command(self, command: Command) -> None:
+        raise NotImplementedError("Please implement this method")
+
+    # All command handlers must implement a mechanism
+    # to handle downstream commands sent by their respective father node.
+    def handle_downstream_command(self, command: Command) -> None:
+        raise NotImplementedError("Please implement this method")
+
+    # All command handlers may send upstream commands
+    # to their respective father nodes.
+    def send_upstream_cmd(self, command: Command) -> None:
+        """
+        Send a upstream command to the father node.
+
+        :type command: Command
+        :param command: The upstream command to send to the father node.
+        """
+        if self.father:
+            self.father.handle_upstream_command(command)
+
+    # All command handlers may send downstream commands
+    # to their respective children nodes.
+    def send_downstream_cmd(self, command: Command) -> None:
+        """
+        Send a downstream command to all children nodes.
+
+        :type command: Command
+        :param command: The downstream command to send to all children nodes.
+        """
+        for child in self.children:
+            child.handle_downstream_command(command)
 
 
 class CommandBuilder:
@@ -61,5 +109,19 @@ class CommandBuilder:
         """
         return Command(
             CommandType.STATUS_CHANGE,
+            {}
+        )
+
+    @staticmethod
+    def build_stop_simulation_cmd() -> Command:
+        """
+        Build a command that informs manager that a simulation requirement has
+        unsatisfied and there's no need to continue assessment.
+
+        :return: A command holding necessary information.
+        :rtype: Command
+        """
+        return Command(
+            CommandType.STOP_SIMULATON,
             {}
         )

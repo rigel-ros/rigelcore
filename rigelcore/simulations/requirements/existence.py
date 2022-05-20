@@ -1,6 +1,6 @@
 import threading
 from math import inf
-from rigelcore.simulations import Command, CommandBuilder, CommandType
+from rigelcore.simulations.command import Command, CommandBuilder, CommandType
 from .node import SimulationRequirementNode
 
 
@@ -13,7 +13,8 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
     def __init__(self, timeout: float = inf) -> None:
         self.children = []
         self.father = None
-        self.__timeout = timeout
+        self.timeout = timeout
+        self.__timer = threading.Timer(timeout, self.handle_timeout)
 
     def assess_children_nodes(self) -> bool:
         """
@@ -30,31 +31,34 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
 
     def handle_children_status_change(self) -> None:
         """
-        Handle STATUS_CHANGE commands sent by chilren nodes.
+        Handle STATUS_CHANGE commands sent by children nodes.
         Whenever a child changes state a disjoint requirement node must check its satisfability.
         """
         if self.assess_children_nodes() != self.satisfied:  # only consider state changes
             self.satisfied = not self.satisfied
 
+            self.__timer.cancel()
+
+            # Issue children to stop receiving incoming ROS messages.
+            command = CommandBuilder.build_rosbridge_disconnect_cmd()
+            self.send_downstream_cmd(command)
+
             # Inform father node about state change.
             command = CommandBuilder.build_status_change_cmd()
             self.send_upstream_cmd(command)
 
-    def handler_timeout(self) -> None:
+    def handle_timeout(self) -> None:
         """
         Handle timeout events.
         Issue children nodes to stop listening for ROS messages.
         """
-        command = CommandBuilder.build_rosbridge_disconnect_cmd()
-        self.send_downstream_cmd(command)
-
         if not self.satisfied:
-            # TODO: find mechanism to stop simulation!!!
-            pass
+            command = CommandBuilder.build_stop_simulation_cmd()
+            self.send_upstream_cmd(command)
 
     def handle_rosbridge_connection_commands(self, command: Command) -> None:
         """
-        Handle commands of type STATUS_CHANGE.
+        Handle commands of type ROSBRIDGE_CONNECT.
         Forward command to all children nodes and initialize timer thread.
 
         :param command: Received command.
@@ -63,9 +67,19 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
         self.send_downstream_cmd(command)
 
         # NOTE: code below will only execute after all ROS message handler were registered.
-        if self.__timeout != inf:  # start timer in case a time limit was specified
-            timer = threading.Timer(self.__timeout, self.handle_timeout)
-            timer.start()
+        if self.timeout != inf:  # start timer in case a time limit was specified
+            self.__timer.start()
+
+    def handle_rosbridge_disconnection_commands(self, command: Command) -> None:
+        """
+        Handle commands of type ROSBRIDGE_DISCONNECT.
+        Forwars command to all children nodes and stop timer threads.
+
+        :param command: Received command.
+        :type command: Command
+        """
+        self.__timer.cancel()  # NOTE: this method does not require previous call to 'start()'
+        self.send_downstream_cmd(command)
 
     def handle_upstream_command(self, command: Command) -> None:
         """
@@ -88,3 +102,5 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
         """
         if command.type == CommandType.ROSBRIDGE_CONNECT:
             self.handle_rosbridge_connection_commands(command)
+        if command.type == CommandType.ROSBRIDGE_DISCONNECT:
+            self.handle_rosbridge_disconnection_commands(command)
