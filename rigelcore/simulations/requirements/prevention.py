@@ -10,6 +10,7 @@ class PreventionSimulationRequirementNode(SimulationRequirementNode):
     if a ROS message is received that satisfies anterior requirements
     then no other message ROS message is received that satisfies posterior requirements.
     """
+
     def __init__(self, timeout: float = inf) -> None:
         self.children = []
         self.father = None
@@ -19,10 +20,10 @@ class PreventionSimulationRequirementNode(SimulationRequirementNode):
     def assess_children_nodes(self) -> bool:
         """
         An existence simulation requirement is considered satisfied
-        only if the anterior requirement is satisfied and the posterior requirement is not.
+        only if the posterior requirement is never satisfied after the anterior requirement.
 
         :rtype: bool
-        :return: True if all children simulation requirements are satisfied. False otherwise.
+        :return: True if requirement is satisfied. False otherwise.
         """
         anterior = self.children[0]
         posterior = self.children[1]
