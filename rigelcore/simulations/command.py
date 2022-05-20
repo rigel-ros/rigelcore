@@ -54,7 +54,7 @@ class CommandHandler:
             self.father.handle_upstream_command(command)
 
     # All command handlers may send downstream commands
-    # to their respective children nodes.
+    # to all of their respective children nodes.
     def send_downstream_cmd(self, command: Command) -> None:
         """
         Send a downstream command to all children nodes.
@@ -64,6 +64,19 @@ class CommandHandler:
         """
         for child in self.children:
             child.handle_downstream_command(command)
+
+    # All command handlers may send downstream commands
+    # to a single child node.
+    def send_child_downstream_cmd(self, child: CommandHandler, command: Command) -> None:
+        """
+        Send a downstream command to a single child node.
+
+        :type child: CommandHandler
+        :param child: The child node.
+        :type command: Command
+        :param command: The downstream command to send to the child node.
+        """
+        child.handle_downstream_command(command)
 
 
 class CommandBuilder:

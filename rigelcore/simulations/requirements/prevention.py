@@ -1,16 +1,15 @@
 import threading
+from .node import SimulationRequirementNode
 from math import inf
 from rigelcore.simulations.command import Command, CommandBuilder, CommandType
-from .node import SimulationRequirementNode
 
 
 class PreventionSimulationRequirementNode(SimulationRequirementNode):
     """
-    A response simulation requirement node ensures
-    that if a ROS message is received that satisfies anterior requirements
+    A response simulation requirement node ensures that
+    if a ROS message is received that satisfies anterior requirements
     then no other message ROS message is received that satisfies posterior requirements.
     """
-
     def __init__(self, timeout: float = inf) -> None:
         self.children = []
         self.father = None
@@ -19,54 +18,41 @@ class PreventionSimulationRequirementNode(SimulationRequirementNode):
 
     def assess_children_nodes(self) -> bool:
         """
-        A prevention simulation requirement consists is considered satisfied
-        in any of the following situations:
-        - posterior requirements are satisfied and anterior requirements are unsatisfied
-        """
-        n_children = len(self.children)
-        assert n_children == 2, f'REQUIREMENT pattern with unexpected number of children {n_children}'
+        An existence simulation requirement is considered satisfied
+        only if the anterior requirement is satisfied and the posterior requirement is not.
 
+        :rtype: bool
+        :return: True if all children simulation requirements are satisfied. False otherwise.
+        """
         anterior = self.children[0]
         posterior = self.children[1]
-
-        # If the posterior requirement is satisfied after the anterior requirement
-        # then a point of no return if reached and the assessment can be stopped.
-        if anterior.satisfied and posterior.satisfied:
-            command = CommandBuilder.build_stop_simulation_cmd()
-            self.send_upstream_cmd(command)
-
-        return False
-
-    def handle_children_status_change(self) -> None:
-        """
-        Handle STATUS_CHANGE commands sent by children nodes.
-        Whenever a child changes state a disjoint requirement node must check its satisfability.
-        """
-        if self.assess_children_nodes() != self.satisfied:  # only consider state changes
-            self.satisfied = not self.satisfied
-
-            self.__timer.cancel()
-
-            # Issue children to stop receiving incoming ROS messages.
-            command = CommandBuilder.build_rosbridge_disconnect_cmd()
-            self.send_downstream_cmd(command)
-
-            # Inform father node about state change.
-            command = CommandBuilder.build_status_change_cmd()
-            self.send_upstream_cmd(command)
+        return anterior.satisfied and not posterior.satisfied
 
     def handle_timeout(self) -> None:
         """
         Handle timeout events.
         Issue children nodes to stop listening for ROS messages.
         """
-        anterior = self.children[0]
-        posterior = self.children[1]
-        self.satisfied = anterior.satisfied and not posterior.satisfied
+        self.satisfied = self.assess_children_nodes()
+        if self.satisfied:
+            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
+            self.send_downstream_cmd(CommandBuilder.build_rosbridge_disconnect_cmd())
+        else:
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
 
-        if not self.satisfied:
-            command = CommandBuilder.build_stop_simulation_cmd()
-            self.send_upstream_cmd(command)
+    def handle_children_status_change(self) -> bool:
+        """
+        Handle STATUS_CHANGE commands sent by children nodes.
+        Whenever a child changes state a disjoint requirement node must check its satisfability.
+        """
+        posterior = self.children[1]
+        if not posterior.listening:  # true right after anterior requirement was satisfied
+            self.send_child_downstream_cmd(posterior, self.__connect_command)
+
+        # If the posterior requirement is satisfied after the anterior requirement
+        # then a point of no return if reached and the assessment can be stopped.
+        else:  # anterior.satisfied and posterior.satisfied
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
 
     def handle_rosbridge_connection_commands(self, command: Command) -> None:
         """
@@ -76,7 +62,12 @@ class PreventionSimulationRequirementNode(SimulationRequirementNode):
         :param command: Received command.
         :type command: Command
         """
-        self.send_downstream_cmd(command)
+        self.__connect_command = command  # save command to be sent later to posterior requirement
+
+        # Notify only the anterior requirement node.
+        # Posterior node must only start listening for ROS messages after it being satisfied.
+        anterior = self.children[0]
+        self.send_child_downstream_cmd(anterior, command)
 
         # NOTE: code below will only execute after all ROS message handler were registered.
         if self.timeout != inf:  # start timer in case a time limit was specified
@@ -90,11 +81,12 @@ class PreventionSimulationRequirementNode(SimulationRequirementNode):
         :param command: Received command.
         :type command: Command
         """
-        anterior = self.children[0]
-        posterior = self.children[1]
-        self.satisfied = anterior.satisfied and not posterior.satisfied
-
         self.__timer.cancel()  # NOTE: this method does not require previous call to 'start()'
+
+        self.satisfied = self.assess_children_nodes()
+        if self.satisfied:
+            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
+
         self.send_downstream_cmd(command)
 
     def handle_upstream_command(self, command: Command) -> None:

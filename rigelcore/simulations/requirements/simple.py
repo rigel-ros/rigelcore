@@ -34,6 +34,8 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         self.ros_message_type = ros_message_type
         self.ros_message_callback = ros_message_callback
 
+        self.listening = False
+
     def handle_upstream_command(self, command: Command) -> None:
         pass  # TODO: implement later
 
@@ -63,16 +65,18 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
             self.ros_message_type,
             self.message_handler
         )
+        self.listening = True
 
     def disconnect_from_rosbridge(self) -> None:
         """
         Unregister ROS message handler and stop listening for incoming ROS messages.
         """
-        self.__rosbridge_client.remove_message_handler(
-            self.ros_topic,
-            self.ros_message_type,
-            self.message_handler
-        )
+        if self.listening:
+            self.__rosbridge_client.remove_message_handler(
+                self.ros_topic,
+                self.ros_message_type,
+                self.message_handler
+            )
 
     def message_handler(self, message: ROS_MESSAGE_TYPE) -> None:
         """
