@@ -87,13 +87,13 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         :param message: The received ROS message.
         :type message: ROS_MESSAGE_TYPE
         """
-        if self.ros_message_callback(message) != self.satisfied:  # only consider state changes
-            self.satisfied = not self.satisfied
+        # NOTE: only consider state changes
+        if self.ros_message_callback(message):
+            self.satisfied = True
 
             # Once a ROS message satisfying the callback condition is received then there's no way back.
             # Stop listening for incoming ROS messages.
             self.disconnect_from_rosbridge()
 
             # Inform father node about state change.
-            command = CommandBuilder.build_status_change_cmd()
-            self.send_upstream_cmd(command)
+            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())

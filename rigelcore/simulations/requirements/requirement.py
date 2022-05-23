@@ -72,6 +72,7 @@ class RequirementSimulationRequirementNode(SimulationRequirementNode):
         :type command: Command
         """
         self.__timer.cancel()  # NOTE: this method does not require previous call to 'start()'
+
         self.send_downstream_cmd(command)
 
     def handle_upstream_command(self, command: Command) -> None:

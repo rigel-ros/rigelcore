@@ -38,18 +38,16 @@ class AbsenceSimulationRequirementNode(SimulationRequirementNode):
         Handle STATUS_CHANGE commands sent by children nodes.
         Whenever a child changes state a disjoint requirement node must check its satisfability.
         """
-        if self.assess_children_nodes() != self.satisfied:  # only consider state changes
-            self.satisfied = not self.satisfied
+        if not self.assess_children_nodes():  # only consider state changes
+            self.satisfied = False
 
             self.__timer.cancel()
 
             # Issue children to stop receiving incoming ROS messages.
-            command = CommandBuilder.build_rosbridge_disconnect_cmd()
-            self.send_downstream_cmd(command)
+            self.send_downstream_cmd(CommandBuilder.build_rosbridge_disconnect_cmd())
 
             # Inform father node about state change.
-            command = CommandBuilder.build_stop_simulation_cmd()
-            self.send_upstream_cmd(command)
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
 
     def handle_timeout(self) -> None:
         """
@@ -57,8 +55,7 @@ class AbsenceSimulationRequirementNode(SimulationRequirementNode):
         Issue children nodes to stop listening for ROS messages.
         """
         if not self.satisfied:
-            command = CommandBuilder.build_stop_simulation_cmd()
-            self.send_upstream_cmd(command)
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
 
     def handle_rosbridge_connection_commands(self, command: Command) -> None:
         """
