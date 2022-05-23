@@ -23,11 +23,10 @@ class RequirementSimulationRequirementNode(SimulationRequirementNode):
         in any of the following situations:
         - both anterior and posterior requirements are satisfied
         """
-        n_children = len(self.children)
-        assert n_children == 2, f'REQUIREMENT pattern with unexpected number of children {n_children}'
-
         posterior = self.children[0]
         anterior = self.children[1]
+        if anterior.satisfied and not posterior.satisfied:
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
         return posterior.satisfied and anterior.satisfied
 
     def handle_children_status_change(self) -> None:
@@ -35,18 +34,12 @@ class RequirementSimulationRequirementNode(SimulationRequirementNode):
         Handle STATUS_CHANGE commands sent by children nodes.
         Whenever a child changes state a disjoint requirement node must check its satisfability.
         """
-        if self.assess_children_nodes() != self.satisfied:  # only consider state changes
-            self.satisfied = not self.satisfied
+        if self.assess_children_nodes():  # only consider state changes
+            self.satisfied = True
 
             self.__timer.cancel()
-
-            # Issue children to stop receiving incoming ROS messages.
-            command = CommandBuilder.build_rosbridge_disconnect_cmd()
-            self.send_downstream_cmd(command)
-
-            # Inform father node about state change.
-            command = CommandBuilder.build_status_change_cmd()
-            self.send_upstream_cmd(command)
+            self.send_downstream_cmd(CommandBuilder.build_rosbridge_disconnect_cmd())
+            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
 
     def handle_timeout(self) -> None:
         """
@@ -54,8 +47,7 @@ class RequirementSimulationRequirementNode(SimulationRequirementNode):
         Issue children nodes to stop listening for ROS messages.
         """
         if not self.satisfied:
-            command = CommandBuilder.build_stop_simulation_cmd()
-            self.send_upstream_cmd(command)
+            self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
 
     def handle_rosbridge_connection_commands(self, command: Command) -> None:
         """
