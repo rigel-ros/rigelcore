@@ -15,9 +15,9 @@ from hpl.visitor import (
     HplEvent,
     HplEventDisjunction,
     HplPattern,
-    HplSimpleEvent
+    HplSimpleEvent,
+    HplVacuousTruth
 )
-from sys import exit
 
 
 class SimulationRequirementsVisitor(HplAstVisitor):
@@ -67,7 +67,12 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         :return: A simulation requirement node.
         """
         generator = CallbackGenerator()
-        callback = generator.generate_callback(event.predicate.condition)
+
+        if isinstance(event.predicate, HplVacuousTruth):
+            callback = generator.process_vacuous_truth()
+        else:
+            callback = generator.process_binary_operator(event.predicate.condition)
+
         simple_node = SimpleSimulationRequirementNode(event.topic.value, event.msg_type.value, callback)
         return simple_node
 
@@ -85,9 +90,8 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         elif isinstance(event, HplEventDisjunction):
             return self.__initialize_disjunction_requirement_event(event)
         else:
-            # TODO: create proper error
-            print(f'Unknown HplEvent subclass {type(event)}')
-            exit(1)
+            # TODO: proper error handler
+            raise Exception(f'Unknown HplEvent subclass {type(event)}')
 
     def visit_hpl_pattern(self, node: HplPattern) -> None:
         """

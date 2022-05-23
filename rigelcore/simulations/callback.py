@@ -146,10 +146,31 @@ class CallbackGenerator:
             return anterior(msg) and posterior(msg)
         return callback
 
-    # TODO: update to use base class HplExpression.
-    def generate_callback(self, operator: HplBinaryOperator) -> ROSCallbackType:
+    def generate_callback_vacuous(self) -> ROSCallbackType:
         """
-        Generates a callback function that verifies the same condition as a HplBinaryOperator.
+        Generates a dummy callback function that simply returns True.
+        This is useful to check if a message was received on a given topic despite its contents.
+
+        :rtype: ROSCallbackType
+        :return: A function that returns True for each return message.
+        """
+        def callback(msg: ROSMessageType) -> bool:
+            return True
+        return callback
+
+    def process_vacuous_truth(self) -> ROSCallbackType:
+        """
+        Retrieve a dummy callback function to be associated with HplVacuousTruth.
+        HplVacuousTruth callbacks simply return True
+
+        :return: A ROS message handler callback function.
+        :rtype: ROSCallbackType
+        """
+        return self.generate_callback_vacuous()
+
+    def process_binary_operator(self, operator: HplBinaryOperator) -> ROSCallbackType:
+        """
+        Retrieve a callback function that verifies the same condition as a HplBinaryOperator.
 
         :param operator: The HplBinaryOperator holding information regarding the callback logic.
         :type operator: HplBinaryOperator
