@@ -101,6 +101,7 @@ class ROSBridgeClient:
                     del self.handlers[key]
                     self.subscribers[key].unsubscribe()
                     del self.subscribers[key]
+        print(f'AFTER DELETING: {self.handlers}')
 
     def close(self) -> None:
         """

@@ -1,3 +1,4 @@
+import time
 from rigelcore.clients import ROSBridgeClient
 from rigelcore.simulations.command import Command, CommandBuilder, CommandType
 from typing import Any, Callable, Dict
@@ -16,7 +17,8 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
             self,
             ros_topic: str,
             ros_message_type: str,
-            ros_message_callback: Callable
+            ros_message_callback: Callable,
+            predicate: str
             ) -> None:
         """
         Class constructor.
@@ -33,11 +35,24 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         self.ros_topic = ros_topic
         self.ros_message_type = ros_message_type
         self.ros_message_callback = ros_message_callback
+        self.predicate = predicate
 
-        self.listening = False
+        # Store the timestamp when the last message that satisfy this requirement was received.
+        self.last_message: float = 0.0
+
+        # Flag that signals when to stop listening for incoming ROS messages.
+        self.trigger: bool = False
+
+    def __str__(self) -> str:
+        # TODO: use 'rich' to make a more readable output.
+        satisfied_msg = str(self.last_message) if self.last_message else "no ROS message received"
+        if self.satisfied:
+            return f'\n[{self.ros_topic}]\t- SATISFIED\t({satisfied_msg}): {self.predicate}'
+        else:
+            return f'\n[{self.ros_topic}]\t- UNSATISFIED\t({satisfied_msg}): {self.predicate}'
 
     def handle_upstream_command(self, command: Command) -> None:
-        pass  # TODO: implement later
+        pass  # NOTE: nodes of this type don't have children and therefore will never receive upstream commands.
 
     def handle_downstream_command(self, command: Command) -> None:
         """
@@ -51,6 +66,8 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
             self.connect_to_rosbridge(command.data['client'])
         elif command.type == CommandType.ROSBRIDGE_DISCONNECT:
             self.disconnect_from_rosbridge()
+        elif command.type == CommandType.TRIGGER:
+            self.handle_trigger(command.data['timestamp'])
 
     def connect_to_rosbridge(self, rosbridge_client: ROSBridgeClient) -> None:
         """
@@ -65,18 +82,26 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
             self.ros_message_type,
             self.message_handler
         )
-        self.listening = True
 
     def disconnect_from_rosbridge(self) -> None:
         """
         Unregister ROS message handler and stop listening for incoming ROS messages.
         """
-        if self.listening:
-            self.__rosbridge_client.remove_message_handler(
-                self.ros_topic,
-                self.ros_message_type,
-                self.message_handler
-            )
+        self.__rosbridge_client.remove_message_handler(
+            self.ros_topic,
+            self.ros_message_type,
+            self.message_handler
+        )
+
+    def handle_trigger(self, timestamp: float) -> None:
+        """
+        :param timestamp: Maximum timestamp for last message received.
+        :type timestamp: float
+        """
+        self.trigger = True
+        if self.last_message > timestamp:
+            self.disconnect_from_rosbridge()
+            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
 
     def message_handler(self, message: ROS_MESSAGE_TYPE) -> None:
         """
@@ -87,13 +112,14 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         :param message: The received ROS message.
         :type message: ROS_MESSAGE_TYPE
         """
-        # NOTE: only consider state changes
+        if self.ros_topic == '/OSPS/TM/ExecuteTaskResp':
+            print(f'RECEIVED MESSAGE: {message}')
+
         if self.ros_message_callback(message):
+
             self.satisfied = True
+            self.last_message = time.time()
 
-            # Once a ROS message satisfying the callback condition is received then there's no way back.
-            # Stop listening for incoming ROS messages.
-            self.disconnect_from_rosbridge()
-
-            # Inform father node about state change.
-            self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
+            if self.trigger:
+                self.disconnect_from_rosbridge()
+                self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())

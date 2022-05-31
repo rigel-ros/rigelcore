@@ -11,6 +11,12 @@ class DisjointSimulationRequirementNode(SimulationRequirementNode):
         self.children = []
         self.father = None
 
+    def __str__(self) -> str:
+        repr = ''
+        for child in self.children:
+            repr += f'{str(child)}'
+        return repr
+
     def assess_children_nodes(self) -> bool:
         """
         A disjoint simulation requirement is considered satisfied
@@ -55,5 +61,5 @@ class DisjointSimulationRequirementNode(SimulationRequirementNode):
         :param command: Received dowstream command.
         :type command: Command
         """
-        if command.type in [CommandType.ROSBRIDGE_CONNECT, CommandType.ROSBRIDGE_DISCONNECT]:
+        if command.type in [CommandType.ROSBRIDGE_CONNECT, CommandType.ROSBRIDGE_DISCONNECT, CommandType.TRIGGER]:
             self.send_downstream_cmd(command)

@@ -17,6 +17,12 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         self.timeout = timeout
         self.__timer = threading.Timer(timeout, self.handle_timeout)
 
+    def __str__(self) -> str:
+        repr = ''
+        for child in self.children:
+            repr += f'{str(child)}'
+        return repr
+
     def assess_children_nodes(self) -> bool:
         """
         A response simulation requirement is considered satisfied
@@ -48,9 +54,11 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         Handle STATUS_CHANGE commands sent by children nodes.
         Whenever a child changes state a disjoint requirement node must check its satisfability.
         """
+        anterior = self.children[0]
         posterior = self.children[1]
-        if not posterior.listening:  # true right after anterior requirement was satisfied
-            self.send_child_downstream_cmd(posterior, self.__connect_command)
+
+        if not posterior.trigger:  # true right after anterior requirement was satisfied
+            self.send_child_downstream_cmd(posterior, CommandBuilder.build_trigger_cmd(anterior.last_message))
 
         else:
             self.satisfied = self.assess_children_nodes()
@@ -58,6 +66,19 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
                 self.__timer.cancel()
                 self.send_downstream_cmd(CommandBuilder.build_rosbridge_disconnect_cmd())
                 self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())
+
+    def handle_trigger(self, command: Command) -> None:
+        """
+        Handle commands of type TRIGGER.
+        Forward command to anterior children.
+
+        :param command: Received command.
+        :type command: Command
+        """
+        # Notify only the anterior requirement node.
+        # Posterior node must only start listening for ROS messages after it being satisfied.
+        anterior = self.children[0]
+        self.send_child_downstream_cmd(anterior, command)
 
     def handle_rosbridge_connection_commands(self, command: Command) -> None:
         """
@@ -67,12 +88,7 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         :param command: Received command.
         :type command: Command
         """
-        self.__connect_command = command  # save command to be sent later to posterior
-
-        # Notify only the anterior requirement node.
-        # Posterior node must only start listening for ROS messages after it being satisfied.
-        anterior = self.children[0]
-        self.send_child_downstream_cmd(anterior, command)
+        self.send_downstream_cmd(command)
 
         # NOTE: code below will only execute after all ROS message handler were registered.
         if self.timeout != inf:  # start timer in case a time limit was specified
@@ -115,5 +131,7 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         """
         if command.type == CommandType.ROSBRIDGE_CONNECT:
             self.handle_rosbridge_connection_commands(command)
-        if command.type == CommandType.ROSBRIDGE_DISCONNECT:
+        elif command.type == CommandType.ROSBRIDGE_DISCONNECT:
             self.handle_rosbridge_disconnection_commands(command)
+        elif command.type == CommandType.TRIGGER:
+            self.handle_trigger(command)

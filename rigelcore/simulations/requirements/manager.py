@@ -18,6 +18,12 @@ class SimulationRequirementsManager(SimulationRequirementNode):
         self.__start_timer = threading.Timer(min_timeout, self.handle_start_timeout)
         self.__stop_timer = threading.Timer(max_timeout, self.handle_stop_timeout)
 
+    def __str__(self) -> str:
+        repr = ''
+        for child in self.children:
+            repr += f'{str(child)}\n'
+        return repr
+
     def connect_to_rosbridge(self, rosbridge_client: ROSBridgeClient):
         """
         Issues children nodes to start listening for incoming ROS messages.
@@ -25,8 +31,8 @@ class SimulationRequirementsManager(SimulationRequirementNode):
         :param rosbridge_client: The ROS bridge client.
         :type rosbridge_client: ROSBridgeClient
         """
-        command = CommandBuilder.build_rosbridge_connect_cmd(rosbridge_client)
-        self.send_downstream_cmd(command)
+        self.send_downstream_cmd(CommandBuilder.build_trigger_cmd())
+        self.send_downstream_cmd(CommandBuilder.build_rosbridge_connect_cmd(rosbridge_client))
 
         self.__start_timer.start()
         self.__stop_timer.start()

@@ -20,6 +20,12 @@ class AbsenceSimulationRequirementNode(SimulationRequirementNode):
         # Change of state requires a prior reception of ROS messages by children nodes.
         self.satisfied = True
 
+    def __str__(self) -> str:
+        repr = ''
+        for child in self.children:
+            repr += f'{str(child)}'
+        return repr
+
     def assess_children_nodes(self) -> bool:
         """
         An absence simulation requirement is considered satisfied
@@ -105,3 +111,5 @@ class AbsenceSimulationRequirementNode(SimulationRequirementNode):
             self.handle_rosbridge_connection_commands(command)
         if command.type == CommandType.ROSBRIDGE_DISCONNECT:
             self.handle_rosbridge_disconnection_commands(command)
+        if command.type == CommandType.TRIGGER:
+            self.send_downstream_cmd(command)

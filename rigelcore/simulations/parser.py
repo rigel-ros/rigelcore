@@ -67,13 +67,17 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         :return: A simulation requirement node.
         """
         generator = CallbackGenerator()
-
         if isinstance(event.predicate, HplVacuousTruth):
             callback = generator.process_vacuous_truth()
         else:
             callback = generator.process_binary_operator(event.predicate.condition)
 
-        simple_node = SimpleSimulationRequirementNode(event.topic.value, event.msg_type.value, callback)
+        simple_node = SimpleSimulationRequirementNode(
+            event.topic.value,
+            event.msg_type.value,
+            callback,
+            predicate=str(event.predicate)
+        )
         return simple_node
 
     def extract_requirement_node(self, event: HplEvent) -> SimulationRequirementNode:

@@ -9,6 +9,7 @@ class CommandType(Enum):
     ROSBRIDGE_DISCONNECT: int = 2
     STATUS_CHANGE: int = 3
     STOP_SIMULATON: int = 4
+    TRIGGER: int = 5
 
 
 class Command:
@@ -137,4 +138,20 @@ class CommandBuilder:
         return Command(
             CommandType.STOP_SIMULATON,
             {}
+        )
+
+    @staticmethod
+    def build_trigger_cmd(timestamp: float = 0.0) -> Command:
+        """
+        Build a command that signals a node to stop listening for incoming messages
+        once it gets satisfied.
+
+        :param timestamp: The timestamp for oldest received message to be considered satisfied.
+        :type timestamp: float, optional
+        :return: A command holding necessary information.
+        :rtype: Command
+        """
+        return Command(
+            CommandType.TRIGGER,
+            {'timestamp': timestamp}
         )

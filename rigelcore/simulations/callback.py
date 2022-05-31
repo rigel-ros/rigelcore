@@ -1,5 +1,5 @@
-from hpl.ast import HplBinaryOperator, HplFieldAccess, HplLiteral
-from typing import Any, Dict, Callable, Union
+from hpl.ast import HplBinaryOperator, HplFieldAccess, HplLiteral, HplThisMessage
+from typing import Any, Dict, Callable, List, Union
 
 ROSMessageValue = Any
 ROSMessageType = Dict[str, Any]
@@ -8,13 +8,32 @@ ROSCallbackType = Callable[[ROSMessageType], bool]
 
 class CallbackGenerator:
 
-    def generate_callback_equal(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def __field_path(self, content: Dict[str, Any], path: List[str]) -> Any:
+        """
+        Extract the value of a field from within a collection of data.
+
+        :param content: The collection of all data to analyze.
+        :type content: Dict[str, Any]
+        :param path: The path for the value.
+        :type path: List[str]
+        :return: The field value.
+        :rtype: Any
+        """
+        next = path[0]
+        try:
+            if len(path) == 1:
+                return content[next]
+            return self.__field_path(content[next], path[1:])
+        except KeyError as err:
+            raise err
+
+    def generate_callback_equal(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a ROS message field equals a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -22,16 +41,17 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] == value)
+            print(f'Comparing field value {self.__field_path(msg, field)} with value {value}')
+            return bool(self.__field_path(msg, field) == value)
         return callback
 
-    def generate_callback_different(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def generate_callback_different(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a given ROS message field is different from a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -39,16 +59,16 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] != value)
+            return bool(self.__field_path(msg, field) != value)
         return callback
 
-    def generate_callback_lesser(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def generate_callback_lesser(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a given ROS message field is lesser than a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -56,16 +76,16 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] < value)
+            return bool(self.__field_path(msg, field) < value)
         return callback
 
-    def generate_callback_lesser_than(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def generate_callback_lesser_than(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a given ROS message field is lesser than or equal to a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -73,16 +93,16 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] <= value)
+            return bool(self.__field_path(msg, field) <= value)
         return callback
 
-    def generate_callback_greater(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def generate_callback_greater(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a given ROS message field is greater than a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -90,16 +110,16 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] > value)
+            return bool(self.__field_path(msg, field) > value)
         return callback
 
-    def generate_callback_greater_than(self, field: str, value: ROSMessageValue) -> ROSCallbackType:
+    def generate_callback_greater_than(self, field: List[str], value: ROSMessageValue) -> ROSCallbackType:
         """
         Generate a base callback function that verifies
         if a given ROS message field is greater than or equal to a certain reference value.
 
         :param field: The ROS message field.
-        :type field: Any
+        :type field: List[str]
         :param value: The reference value.
         :type value: Any
         :rtype: Callable[[Dict[str, Any]], bool]
@@ -107,7 +127,7 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return bool(msg[field] >= value)
+            return bool(self.__field_path(msg, field) >= value)
         return callback
 
     def generate_callback_iff(self, anterior: ROSCallbackType, posterior: ROSCallbackType) -> ROSCallbackType:
@@ -143,7 +163,13 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            return anterior(msg) and posterior(msg)
+            print('ANTERIOR')
+            anterior_value = anterior(msg)
+
+            print('POSTERIOR')
+            posterior_value = posterior(msg)
+            return anterior_value and posterior_value
+
         return callback
 
     def generate_callback_vacuous(self) -> ROSCallbackType:
@@ -195,7 +221,12 @@ class CallbackGenerator:
         elif operator.op in ['iff', 'implies']:
             return self.generate_callback_iff(arg2, arg1)
         elif operator.op == 'and':
-            return self.generate_callback_and(arg1, arg2)
+            print('ENTREI @@@@@@@@@@@@@@@@@@@@@@@@@')
+            print(f'ARG 1: {arg1}')
+            print(f'ARG 2: {arg2}')
+            callback = self.generate_callback_and(arg1, arg2)
+            print(callback)
+            return callback
         else:
             # TODO: create proper exception.
             raise Exception(f'Unsupported operator "{operator}".')
@@ -203,25 +234,52 @@ class CallbackGenerator:
     def __extract_argument(
             self,
             operand: Union[HplBinaryOperator, HplFieldAccess, HplLiteral]
-            ) -> Union[float, int, str, ROSCallbackType]:
+            ) -> Union[float, int, List[str], str, ROSCallbackType]:
+        """
+        :param operand: _description_
+        :type operand: Union[HplBinaryOperator, HplFieldAccess, HplLiteral]
+        :return: _description_
+        :rtype: Union[float, int, List[str], str, ROSCallbackType]
+        """
+        if isinstance(operand, HplFieldAccess):
+            return self.__extract_field_path(operand)
+        else:
+            return self.__extract_value(operand)
+
+    def __extract_field_path(self, operand: HplFieldAccess) -> List[str]:
+        """
+        Extract the path for a ROS message field.
+
+        :param operand: The operator to extract the field path.
+        :type operand: HplFieldAccess
+        :return: The ROS message field path.
+        :rtype: List[str]
+        """
+        path = []
+        if operand.message and not isinstance(operand.message, HplThisMessage):
+            path += operand.message.field.split('.')
+        path += operand.field.split('.')
+        return path
+
+    def __extract_value(
+            self,
+            operand: Union[HplBinaryOperator, HplLiteral]
+            ) -> Union[bool, float, int, str, ROSCallbackType]:
         """
         Extract arguments from operators.
 
         :param operand: The operator to extract arguments from.
-        :type operand: Union[HplBinaryOperator, HplFieldAccess, HplLiteral]
+        :type operand: Union[HplBinaryOperator, HplLiteral]
         :return: The argument value.
         :rtype: Union[float, int, str, ROSCallbackType]
         """
-        if isinstance(operand, HplFieldAccess):
-            return operand.field.value
-
         if isinstance(operand, HplLiteral):
             # NOTE: numerical primitive data values and 'bool'
             # have a different access mechanism than 'str'
             for t in [int, float, bool]:
                 if isinstance(operand.value, t):
                     return operand.value
-            return operand.value.value  # for 'str' typed values
+            return operand.value.value[1:-1]  # for 'str' typed values - remove quotation marks
 
         elif isinstance(operand, HplBinaryOperator):
-            return self.generate_callback(operand)
+            return self.process_binary_operator(operand)

@@ -16,6 +16,12 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
         self.timeout = timeout
         self.__timer = threading.Timer(timeout, self.handle_timeout)
 
+    def __str__(self) -> str:
+        repr = ''
+        for child in self.children:
+            repr += f'{str(child)}'
+        return repr
+
     def assess_children_nodes(self) -> bool:
         """
         An existence simulation requirement is considered satisfied
@@ -99,5 +105,7 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
         """
         if command.type == CommandType.ROSBRIDGE_CONNECT:
             self.handle_rosbridge_connection_commands(command)
-        if command.type == CommandType.ROSBRIDGE_DISCONNECT:
+        elif command.type == CommandType.ROSBRIDGE_DISCONNECT:
             self.handle_rosbridge_disconnection_commands(command)
+        elif command.type == CommandType.TRIGGER:
+            self.send_downstream_cmd(command)
