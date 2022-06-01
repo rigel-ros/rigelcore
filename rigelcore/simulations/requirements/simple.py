@@ -112,9 +112,6 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         :param message: The received ROS message.
         :type message: ROS_MESSAGE_TYPE
         """
-        if self.ros_topic == '/OSPS/TM/ExecuteTaskResp':
-            print(f'RECEIVED MESSAGE: {message}')
-
         if self.ros_message_callback(message):
 
             self.satisfied = True

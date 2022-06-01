@@ -41,7 +41,6 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            print(f'Comparing field value {self.__field_path(msg, field)} with value {value}')
             return bool(self.__field_path(msg, field) == value)
         return callback
 
@@ -163,10 +162,7 @@ class CallbackGenerator:
         False otherwise.
         """
         def callback(msg: ROSMessageType) -> bool:
-            print('ANTERIOR')
             anterior_value = anterior(msg)
-
-            print('POSTERIOR')
             posterior_value = posterior(msg)
             return anterior_value and posterior_value
 
@@ -221,12 +217,7 @@ class CallbackGenerator:
         elif operator.op in ['iff', 'implies']:
             return self.generate_callback_iff(arg2, arg1)
         elif operator.op == 'and':
-            print('ENTREI @@@@@@@@@@@@@@@@@@@@@@@@@')
-            print(f'ARG 1: {arg1}')
-            print(f'ARG 2: {arg2}')
-            callback = self.generate_callback_and(arg1, arg2)
-            print(callback)
-            return callback
+            return self.generate_callback_and(arg1, arg2)
         else:
             # TODO: create proper exception.
             raise Exception(f'Unsupported operator "{operator}".')

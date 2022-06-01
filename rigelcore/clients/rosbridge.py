@@ -45,10 +45,11 @@ class ROSBridgeClient:
         :return: The message handler function to be executed everytime a ROS message of specified type
         is received on the specified ROS topic.
         """
-
         def handler_function(message: ROS_MESSAGE_TYPE) -> None:
-            for message_handler in self.handlers[(topic, message_type)]:
-                message_handler(message)
+            key = (topic, message_type)
+            if key in self.handlers:
+                for message_handler in self.handlers[key]:
+                    message_handler(message)
 
         return handler_function
 
@@ -75,9 +76,9 @@ class ROSBridgeClient:
 
             self.handlers[key] = [handler]
 
-            subscriber = roslibpy.Topic(self.__rosbridge_client, topic, message_type)
-            subscriber.subscribe(self.__create_generic_message_handler(topic, message_type))
-            self.subscribers[key] = subscriber
+        subscriber = roslibpy.Topic(self.__rosbridge_client, topic, message_type)
+        subscriber.subscribe(self.__create_generic_message_handler(topic, message_type))
+        self.subscribers[key] = subscriber
 
     def remove_message_handler(self, topic: str, message_type: str, handler: ROS_MESSAGE_HANDLER_TYPE) -> None:
         """
@@ -101,7 +102,6 @@ class ROSBridgeClient:
                     del self.handlers[key]
                     self.subscribers[key].unsubscribe()
                     del self.subscribers[key]
-        print(f'AFTER DELETING: {self.handlers}')
 
     def close(self) -> None:
         """
