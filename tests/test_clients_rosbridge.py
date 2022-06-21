@@ -76,8 +76,6 @@ class ROSBridgeClientTesting(unittest.TestCase):
         self.assertEqual(len(client.handlers[key]), 2)
         self.assertEqual(client.handlers[key][0], test_message_handler)
         self.assertEqual(client.handlers[key][1], test_another_message_handler)
-        rostopic_mock.assert_called_once()
-        rostopic_mock.subscribe.assert_called_once()
 
     @patch('rigelcore.clients.rosbridge.roslibpy.Topic')
     @patch('rigelcore.clients.rosbridge.roslibpy.Ros')
@@ -96,14 +94,13 @@ class ROSBridgeClientTesting(unittest.TestCase):
         rostopic_mock.return_value = rostopic_mock
 
         client = ROSBridgeClient('test_host')
+
         client.register_message_handler(test_ros_topic, test_ros_msg_type, test_message_handler)
         client.register_message_handler(test_ros_topic, test_ros_msg_type, test_message_handler)
 
         key = (test_ros_topic, test_ros_msg_type)
         self.assertEqual(len(client.handlers[key]), 1)
         self.assertEqual(client.handlers[key][0], test_message_handler)
-        rostopic_mock.assert_called_once()
-        rostopic_mock.subscribe.assert_called_once()
 
     @patch('rigelcore.clients.rosbridge.roslibpy.Topic')
     @patch('rigelcore.clients.rosbridge.roslibpy.Ros')
