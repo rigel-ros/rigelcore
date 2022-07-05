@@ -1,20 +1,21 @@
-name: Test rigelcore
+name: Publish rigelcore to PyPI
 
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    types: [labeled]
+    tags:
+      - "v*.*.*"
 
 jobs:
 
-  test:
+  publish:
+
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8"]
+  
     runs-on: ubuntu-latest
+  
     steps:
 
       - uses: actions/checkout@master
@@ -53,3 +54,8 @@ jobs:
 
       - name: Test rigelcore (pytest)
         run: poetry run coverage run -m pytest
+
+      - name: Build and publish rigelcore to PyPI
+        uses: JRubics/poetry-publish@v1.11
+        with:
+          pypi_token: ${{ secrets.PYPI_API_TOKEN }}
