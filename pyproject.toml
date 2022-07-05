@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rigelcore"
-version = "0.1.15"
+version = "0.1.16"
 description = "A common interface for Rigel and all its plugins."
 homepage = "https://github.com/rigel-ros/rigelcore"
 keywords = ["docker", "ros", "cloud", "robotics"]

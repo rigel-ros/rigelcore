@@ -35,8 +35,16 @@ class AbsenceSimulationRequirementNode(SimulationRequirementNode):
         :return: True if no children simulation requirement is satisfied. False otherwise.
         """
         for child in self.children:
+
+            # NOTE: the following assertions is required so that mypy
+            # doesn't throw an error related with multiple inheritance.
+            # All 'children' are of type CommandHandler and
+            # 'satisfied' is a member of SimulationRequirementNode
+            # that inherits from CommandHandler.
+            assert isinstance(child, SimulationRequirementNode)
             if child.satisfied:
                 return False
+
         return True
 
     def handle_children_status_change(self) -> None:

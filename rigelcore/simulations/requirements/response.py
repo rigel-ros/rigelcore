@@ -1,7 +1,9 @@
 import threading
 from math import inf
 from rigelcore.simulations.command import Command, CommandBuilder, CommandType
+from .disjoint import DisjointSimulationRequirementNode
 from .node import SimulationRequirementNode
+from .simple import SimpleSimulationRequirementNode
 
 
 class ResponseSimulationRequirementNode(SimulationRequirementNode):
@@ -33,6 +35,15 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         """
         anterior = self.children[0]
         posterior = self.children[1]
+
+        # NOTE: the following assertions are required so that mypy
+        # doesn't throw an error related with multiple inheritance.
+        # All 'children' are of type CommandHandler and
+        # 'satisfied' is a member of SimulationRequirementNode
+        # that inherits from CommandHandler.
+        assert isinstance(anterior, SimulationRequirementNode)
+        assert isinstance(posterior, SimulationRequirementNode)
+
         return anterior.satisfied and posterior.satisfied
 
     def handle_timeout(self) -> None:
@@ -56,6 +67,13 @@ class ResponseSimulationRequirementNode(SimulationRequirementNode):
         """
         anterior = self.children[0]
         posterior = self.children[1]
+
+        # NOTE: the following assertions are required by mypy.
+        # Mypy has no notion of the inner structure of requirements ans must be
+        # ensured that children to be of type SimpleSimulationRequirementNode
+        # (so that fields 'trigger' and 'last_message' may be accessed).
+        assert isinstance(anterior, (DisjointSimulationRequirementNode, SimpleSimulationRequirementNode))
+        assert isinstance(posterior, (DisjointSimulationRequirementNode, SimpleSimulationRequirementNode))
 
         if not posterior.trigger:  # true right after anterior requirement was satisfied
             self.send_child_downstream_cmd(posterior, CommandBuilder.build_trigger_cmd(anterior.last_message))

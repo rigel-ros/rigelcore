@@ -1,7 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 from rigelcore.clients import ROSBridgeClient
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class CommandType(Enum):
@@ -29,7 +29,7 @@ class CommandHandler:
     # Command handlers form a hierarchical tree.
     # For commands to be exchanged between tree layers
     # each node must have a local notion of the tree structure.
-    father: CommandHandler
+    father: Optional[CommandHandler]
     children: List[CommandHandler]
 
     # All command handlers must implement a mechanism
