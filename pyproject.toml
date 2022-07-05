@@ -2,12 +2,12 @@
 name = "rigelcore"
 version = "0.1.15"
 description = "A common interface for Rigel and all its plugins."
-homepage = "https://gitlab.inesctec.pt/pedro.m.melo/rigelcore"
+homepage = "https://github.com/rigel-ros/rigelcore"
 keywords = ["docker", "ros", "cloud", "robotics"]
 authors = ["Pedro Miguel Melo <pedro.m.melo@inesctec.pt>"]
 maintainers = ["Pedro Miguel Melo <pedro.m.melo@inesctec.pt>"]
 readme = "README.md"
-repository = "https://gitlab.inesctec.pt/pedro.m.melo/rigelcore"
+repository = "https://github.com/rigel-ros/rigelcore"
 license = "MIT"
 classifiers = [
     "License :: OSI Approved :: MIT License",
