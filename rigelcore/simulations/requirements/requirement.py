@@ -31,6 +31,15 @@ class RequirementSimulationRequirementNode(SimulationRequirementNode):
         """
         posterior = self.children[0]
         anterior = self.children[1]
+
+        # NOTE: the following assertions are required so that mypy
+        # doesn't throw an error related with multiple inheritance.
+        # All 'children' are of type CommandHandler and
+        # 'satisfied' is a member of SimulationRequirementNode
+        # that inherits from CommandHandler.
+        assert isinstance(anterior, SimulationRequirementNode)
+        assert isinstance(posterior, SimulationRequirementNode)
+
         if anterior.satisfied and not posterior.satisfied:
             self.send_upstream_cmd(CommandBuilder.build_stop_simulation_cmd())
         return posterior.satisfied and anterior.satisfied

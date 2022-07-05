@@ -225,7 +225,7 @@ class CallbackGenerator:
     def __extract_argument(
             self,
             operand: Union[HplBinaryOperator, HplFieldAccess, HplLiteral]
-            ) -> Union[float, int, List[str], str, ROSCallbackType]:
+            ) -> Any:
         """
         :param operand: _description_
         :type operand: Union[HplBinaryOperator, HplFieldAccess, HplLiteral]
@@ -255,14 +255,14 @@ class CallbackGenerator:
     def __extract_value(
             self,
             operand: Union[HplBinaryOperator, HplLiteral]
-            ) -> Union[bool, float, int, str, ROSCallbackType]:
+            ) -> Any:
         """
         Extract arguments from operators.
 
         :param operand: The operator to extract arguments from.
         :type operand: Union[HplBinaryOperator, HplLiteral]
         :return: The argument value.
-        :rtype: Union[float, int, str, ROSCallbackType]
+        :rtype: Any
         """
         if isinstance(operand, HplLiteral):
             # NOTE: numerical primitive data values and 'bool'

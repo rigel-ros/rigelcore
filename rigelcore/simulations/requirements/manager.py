@@ -24,7 +24,7 @@ class SimulationRequirementsManager(SimulationRequirementNode):
             repr += f'{str(child)}\n'
         return repr
 
-    def connect_to_rosbridge(self, rosbridge_client: ROSBridgeClient):
+    def connect_to_rosbridge(self, rosbridge_client: ROSBridgeClient) -> None:
         """
         Issues children nodes to start listening for incoming ROS messages.
 
@@ -37,18 +37,18 @@ class SimulationRequirementsManager(SimulationRequirementNode):
         self.__start_timer.start()
         self.__stop_timer.start()
 
-    def disconnect_from_rosbridge(self):
+    def disconnect_from_rosbridge(self) -> None:
         """
         Issue children nodes to stop listening for incoming ROS messages.
         """
         command = CommandBuilder.build_rosbridge_disconnect_cmd()
         self.send_downstream_cmd(command)
 
-    def stop_timers(self):
+    def stop_timers(self) -> None:
         self.__start_timer.cancel()
         self.__stop_timer.cancel()
 
-    def stop_simulation(self):
+    def stop_simulation(self) -> None:
         """
         Stop simulation.
         """
@@ -75,7 +75,20 @@ class SimulationRequirementsManager(SimulationRequirementNode):
         :rtype: bool
         """
         if self.children:
-            return False not in [child.satisfied for child in self.children]
+            for child in self.children:
+
+                # NOTE: the following assertion is required so that mypy
+                # doesn't throw an error related with multiple inheritance.
+                # All 'children' are of type CommandHandler and
+                # 'satisfied' is a member of SimulationRequirementNode
+                # that inherits from CommandHandler.
+                assert isinstance(child, SimulationRequirementNode)
+                if not child.satisfied:
+                    return False
+
+            return True
+
+            # return False not in [child.satisfied for child in self.children]
         return False  # when no requirements are specified run simulation until timeout is reached.
 
     def handle_children_status_change(self) -> None:

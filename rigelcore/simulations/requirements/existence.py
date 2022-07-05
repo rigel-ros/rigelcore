@@ -31,6 +31,14 @@ class ExistenceSimulationRequirementNode(SimulationRequirementNode):
         :return: True if all children simulation requirements are satisfied. False otherwise.
         """
         for child in self.children:
+
+            # NOTE: the following assertion is required so that mypy
+            # doesn't throw an error related with multiple inheritance.
+            # All 'children' are of type CommandHandler and
+            # 'satisfied' is a member of SimulationRequirementNode
+            # that inherits from CommandHandler.
+            assert isinstance(child, SimulationRequirementNode)
+
             if not child.satisfied:
                 return False
         return True
