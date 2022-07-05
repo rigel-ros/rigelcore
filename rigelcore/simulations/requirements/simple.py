@@ -2,6 +2,8 @@ import time
 from rigelcore.clients import ROSBridgeClient
 from rigelcore.simulations.command import Command, CommandBuilder, CommandType
 from typing import Any, Callable, Dict
+
+from .disjoint import DisjointSimulationRequirementNode
 from .node import SimulationRequirementNode
 
 ROS_MESSAGE_TYPE = Dict[str, Any]
@@ -118,5 +120,9 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
             self.last_message = time.time()
 
             if self.trigger:
+
+                if isinstance(self.father, DisjointSimulationRequirementNode):
+                    self.father.last_message = self.last_message
+
                 self.disconnect_from_rosbridge()
                 self.send_upstream_cmd(CommandBuilder.build_status_change_cmd())

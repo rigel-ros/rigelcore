@@ -1,3 +1,13 @@
+from hpl.parser import property_parser
+from hpl.visitor import (
+    HplAstVisitor,
+    HplEvent,
+    HplEventDisjunction,
+    HplPattern,
+    HplSimpleEvent,
+    HplVacuousTruth
+)
+from typing import Optional
 from .callback import CallbackGenerator
 from .requirements import (
     AbsenceSimulationRequirementNode,
@@ -9,15 +19,6 @@ from .requirements import (
     SimpleSimulationRequirementNode,
     SimulationRequirementNode
 )
-from hpl.parser import property_parser
-from hpl.visitor import (
-    HplAstVisitor,
-    HplEvent,
-    HplEventDisjunction,
-    HplPattern,
-    HplSimpleEvent,
-    HplVacuousTruth
-)
 
 
 class SimulationRequirementsVisitor(HplAstVisitor):
@@ -25,7 +26,7 @@ class SimulationRequirementsVisitor(HplAstVisitor):
     A class to extract simulation requirements from the nodes of a transformed HPL AST.
     """
 
-    requirement: SimulationRequirementNode
+    requirement: Optional[SimulationRequirementNode]
 
     def __init__(self) -> None:
         """
@@ -46,12 +47,12 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         disjoint_node = DisjointSimulationRequirementNode()
 
         # Parse "event1"
-        child1 = self.extract_requirement_node(event.event1)
+        child1 = self.__extract_simulation_requirement_node(event.event1)
         disjoint_node.children.append(child1)
         child1.father = disjoint_node
 
         # Parse "event2"
-        child2 = self.extract_requirement_node(event.event2)
+        child2 = self.__extract_simulation_requirement_node(event.event2)
         disjoint_node.children.append(child2)
         child2.father = disjoint_node
 
@@ -80,7 +81,7 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         )
         return simple_node
 
-    def extract_requirement_node(self, event: HplEvent) -> SimulationRequirementNode:
+    def __extract_simulation_requirement_node(self, event: HplEvent) -> SimulationRequirementNode:
         """
         Creates an instance of SimulationRequirementNode by iterating over an instance of HplEvent.
 
@@ -115,8 +116,10 @@ class SimulationRequirementsVisitor(HplAstVisitor):
         elif node.is_prevention:
             self.requirement = PreventionSimulationRequirementNode(timeout=node.max_time)
 
+        assert isinstance(self.requirement, SimulationRequirementNode)
+
         for child in node.children():
-            child_node = self.extract_requirement_node(child)
+            child_node = self.__extract_simulation_requirement_node(child)
             child_node.father = self.requirement
             self.requirement.children.append(child_node)
 
@@ -150,4 +153,5 @@ class SimulationRequirementsParser:
         for node in ast.iterate():
             node.accept(visitor)
 
+        assert isinstance(visitor.requirement, SimulationRequirementNode)
         return visitor.requirement
