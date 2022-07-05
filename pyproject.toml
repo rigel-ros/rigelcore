@@ -36,7 +36,6 @@ nox = "^2022.1.7"
 pre-commit = "^2.17.0"
 pytest = "^5.2"
 twine = "^3.8.0"
-unittest = "^0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
