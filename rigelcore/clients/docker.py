@@ -135,6 +135,53 @@ class DockerClient:
         except python_on_whales.exceptions.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
+    def get_builder(self, name: str) -> Optional[python_on_whales.components.buildx.cli_wrapper.Builder]:
+        """
+        Get a Docker builder
+
+        :param name: the name of the builder
+        :type name: str
+        :return: the builder, if existent
+        :rtype: python_on_whales.components.buildx.cli_wrapper.Builder
+        """
+        try:
+            return self.client.buildx.inspect(name)
+        except python_on_whales.exceptions.DockerException:
+            return None
+
+    def create_builder(self, name: str, use: bool = True) -> python_on_whales.components.buildx.cli_wrapper.Builder:
+        """
+        Create a Docker builder.
+
+        :param name: the builder name
+        :type name: str
+        :param use: set to use, defaults to True
+        :type use: bool, optional
+        :return: the created Docker builder, if unexistent.
+        :rtype: python_on_whales.components.buildx.cli_wrapper.Builder
+        """
+        builder = self.get_builder(name)
+        if not builder:
+            try:
+                return self.client.buildx.create(name=name, use=use)
+            except python_on_whales.exceptions.DockerException as exception:
+                raise DockerAPIError(exception=exception)
+        return builder  # return already existing builder
+
+    def remove_builder(self, name: str) -> None:
+        """
+        Remove a Docker builder.
+
+        :type name: string
+        :param name: The name of the Docker builder.
+        """
+        builder = self.get_builder(name)
+        if builder:
+            try:
+                self.client.buildx.remove(builder)
+            except python_on_whales.exceptions.DockerException as exception:
+                raise DockerAPIError(exception=exception)
+
     def get_network(self, name: str) -> Optional[python_on_whales.components.network.cli_wrapper.Network]:
         """
         Get a Docker network.

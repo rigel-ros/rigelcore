@@ -227,6 +227,184 @@ class DockerClientTesting(unittest.TestCase):
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
+    def test_docker_builder_exists_true(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to verify if a Docker builder already exists
+        is working as expected.
+        """
+        test_docker_builder = 'test_docker_builder'
+
+        test_builder = Mock()
+        docker_mock.buildx.inspect.return_value = test_builder
+
+        docker_client = DockerClient()
+        builder = docker_client.get_builder(test_docker_builder)
+
+        docker_mock.buildx.inspect.assert_called_once_with(test_docker_builder)
+        self.assertEqual(builder, test_builder)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    def test_docker_builder_exists_false(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to verify if a Docker builder already exists
+        is working as expected.
+        """
+        test_docker_builder = 'test_docker_builder'
+
+        test_exception = python_on_whales.exceptions.DockerException(['test_command'], 0)
+        docker_mock.buildx.inspect.side_effect = test_exception
+
+        docker_client = DockerClient()
+        builder = docker_client.get_builder(test_docker_builder)
+
+        docker_mock.buildx.inspect.assert_called_once_with(test_docker_builder)
+        self.assertIsNone(builder)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_create_docker_builder_new_defaults(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to create new Docker networks works as expected
+        when no 'use' value is provided.
+        """
+        test_docker_builder_name = 'test_docker_builder_name'
+
+        builder_mock.return_value = None
+
+        docker_client = DockerClient()
+        docker_client.create_builder(test_docker_builder_name)
+
+        builder_mock.assert_called_once_with(test_docker_builder_name)
+        docker_mock.buildx.create.assert_called_once_with(
+            name=test_docker_builder_name,
+            use=True
+        )
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_create_docker_builder_new(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to create new Docker networks works as expected.
+        """
+
+        test_docker_builder_name = 'test_docker_builder_name'
+        test_docker_builder_use = cast(bool, str('test_docker_builder_use'))
+
+        builder_mock.return_value = None
+
+        docker_client = DockerClient()
+        docker_client.create_builder(
+            test_docker_builder_name,
+            use=test_docker_builder_use
+        )
+
+        builder_mock.assert_called_once_with(test_docker_builder_name)
+        docker_mock.buildx.create.assert_called_once_with(
+            name=test_docker_builder_name,
+            use=test_docker_builder_use
+        )
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_create_docker_builder_existent(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that the mechanism to create new Docker builders first
+        verifies if a given Docker builder exists before creating it.
+        """
+        test_docker_builder_name = 'test_docker_builder_name'
+        test_docker_builder_use = cast(bool, str('test_docker_builder_use'))
+
+        test_builder = Mock()
+        builder_mock.return_value = test_builder
+
+        docker_client = DockerClient()
+        builder = docker_client.create_builder(
+            test_docker_builder_name,
+            use=test_docker_builder_use
+        )
+
+        builder_mock.assert_called_once_with(test_docker_builder_name)
+        docker_mock.buildx.create.assert_not_called()
+        self.assertEqual(builder, test_builder)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_docker_create_builder_api_error(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while creating a new Docker builder using the Docker API.
+        """
+        test_exception = python_on_whales.exceptions.DockerException(['test_command'], 0)
+        docker_mock.buildx.create.side_effect = test_exception
+
+        builder_mock.return_value = None
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.create_builder(
+                'test_docker_builder_name',
+                use=False
+            )
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_docker_remove_builder_api_error(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that an instance of DockerAPIError is thrown
+        if an error occurs while deleting a Docker builder using the Docker API.
+        """
+        test_builder_name = 'test_builder_name'
+
+        test_exception = python_on_whales.exceptions.DockerException(['test_command'], 0)
+        docker_mock.buildx.remove.side_effect = test_exception
+
+        test_builder = Mock()
+        builder_mock.return_value = test_builder
+
+        with self.assertRaises(DockerAPIError) as context:
+            docker_client = DockerClient()
+            docker_client.remove_builder(test_builder_name)
+
+        builder_mock.assert_called_once_with(test_builder_name)
+        self.assertEqual(context.exception.kwargs['exception'], test_exception)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_docker_remove_builder_unexistent(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a builder delete Docker API call is only made if a given builder exists.
+        """
+        test_builder_name = 'test_builder_name'
+
+        builder_mock.return_value = False
+
+        docker_client = DockerClient()
+        docker_client.remove_builder(test_builder_name)
+
+        builder_mock.assert_called_once_with(test_builder_name)
+        docker_mock.buildx.remove.assert_not_called()
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    @patch('rigelcore.clients.docker.DockerClient.get_builder')
+    def test_docker_remove_builder_existent(self, builder_mock: Mock, docker_mock: Mock) -> None:
+        """
+        Ensure that a network delete Docker API call is only made if a given network exists.
+        """
+        test_builder_name = 'test_network_name'
+
+        test_builder = Mock()
+        builder_mock.return_value = test_builder
+
+        docker_client = DockerClient()
+        docker_client.remove_builder(test_builder_name)
+
+        builder_mock.assert_called_once_with(test_builder_name)
+        docker_mock.buildx.remove.assert_called_once_with(test_builder)
+
+    #################
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
     def test_docker_network_exists_true(self, docker_mock: Mock) -> None:
         """
         Ensure that the mechanism to verify if a Docker network already exists
@@ -309,7 +487,7 @@ class DockerClientTesting(unittest.TestCase):
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
     @patch('rigelcore.clients.docker.DockerClient.get_network')
-    def test_docker_create_network_api_error_(self, network_mock: Mock, docker_mock: Mock) -> None:
+    def test_docker_create_network_api_error(self, network_mock: Mock, docker_mock: Mock) -> None:
         """
         Ensure that an instance of DockerAPIError is thrown
         if an error occurs while creating a new Docker network using the Docker API.
