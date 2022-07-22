@@ -29,34 +29,12 @@ class DockerAPIError(RigelError):
     code = 2
 
 
-class InvalidDockerImageNameError(RigelError):
-    """
-    Raised whenever an attempt is made to tag a Docker image using an invalid image name.
-
-    :type image: string
-    :ivar image: Invalid Docker image name.
-    """
-    base = "Invalid Docker image name '{image}'."
-    code = 3
-
-
 class InvalidDockerClientInstanceError(RigelError):
     """
     Raised whenever an invalid Docker client instance is provided.
     """
-    base = "An invalid instance of docker.client.DockerClient was provided."
+    base = "An invalid instance of python_on_whales.docker_client.DockerClient was provided."
     code = 4
-
-
-class DockerOperationError(RigelError):
-    """
-    Raised whenever an error occurs while calling the Docker API.
-
-    :type msg: string
-    :ivar msg: The error message as provided by the Docker API.
-    """
-    base = "An error while calling Docker: {msg}."
-    code = 5
 
 
 class PydanticValidationError(RigelError):

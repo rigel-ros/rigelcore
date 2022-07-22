@@ -3,9 +3,7 @@ import python_on_whales
 import unittest
 from rigelcore.exceptions import (
     DockerAPIError,
-    DockerOperationError,
     InvalidDockerClientInstanceError,
-    InvalidDockerImageNameError,
     PydanticValidationError,
     RigelError,
     UndeclaredEnvironmentVariableError,
@@ -36,32 +34,12 @@ class ExceptionTesting(unittest.TestCase):
         self.assertEqual(err.kwargs['exception'], exception)
         self.assertTrue(isinstance(err, RigelError))
 
-    def test_docker_invalid_image_name_error(self) -> None:
-        """
-        Ensure that instances of InvalidDockerImageNameError are thrown as expected.
-        """
-        test_image = 'test_image'
-        err = InvalidDockerImageNameError(image=test_image)
-        self.assertEqual(err.code, 3)
-        self.assertEqual(err.kwargs['image'], test_image)
-        self.assertTrue(isinstance(err, RigelError))
-
     def test_invalid_docker_client_instance_error(self) -> None:
         """
         Ensure that instances of InvalidDockerClientInstanceError are thrown as expected.
         """
         err = InvalidDockerClientInstanceError()
         self.assertEqual(err.code, 4)
-        self.assertTrue(isinstance(err, RigelError))
-
-    def test_docker_operation_error(self) -> None:
-        """
-        Ensure that instances of DockerOperationError are thrown as expected.
-        """
-        test_msg = 'test_msg'
-        err = DockerOperationError(msg=test_msg)
-        self.assertEqual(err.code, 5)
-        self.assertEqual(err.kwargs['msg'], test_msg)
         self.assertTrue(isinstance(err, RigelError))
 
     def test_pydantic_validation_error(self) -> None:

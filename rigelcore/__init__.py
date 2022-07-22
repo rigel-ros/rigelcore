@@ -1,9 +1,7 @@
 from . import clients  # noqa: F401
 from .exceptions import (  # noqa: F401
     RigelError,
-    DockerOperationError,
     InvalidDockerClientInstanceError,
-    InvalidDockerImageNameError,
     PydanticValidationError,
     UndeclaredEnvironmentVariableError,
     UndeclaredGlobalVariableError
