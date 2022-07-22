@@ -1,5 +1,5 @@
-import docker
 import pydantic
+import python_on_whales
 import unittest
 from rigelcore.exceptions import (
     DockerAPIError,
@@ -11,6 +11,7 @@ from rigelcore.exceptions import (
     UndeclaredEnvironmentVariableError,
     UndeclaredGlobalVariableError
 )
+from typing import cast
 
 
 class ExceptionTesting(unittest.TestCase):
@@ -29,7 +30,7 @@ class ExceptionTesting(unittest.TestCase):
         """
         Ensure that instances of DockerAPIError are thrown as expected.
         """
-        exception = docker.errors.DockerException()
+        exception = python_on_whales.exceptions.DockerException(['dummy_command'], 0)
         err = DockerAPIError(exception=exception)
         self.assertEqual(err.code, 2)
         self.assertEqual(err.kwargs['exception'], exception)
@@ -73,7 +74,8 @@ class ExceptionTesting(unittest.TestCase):
             return a + b
 
         try:
-            test_sum('a', 12)  # type: ignore [arg-type]
+            arg = cast(int, str('a'))
+            test_sum(arg, 12)
         except pydantic.ValidationError as exception:
 
             err = PydanticValidationError(exception=exception)

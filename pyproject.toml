@@ -20,8 +20,8 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-docker = "^5.0.3"
 pydantic = "^1.9.0"
+python-on-whales = "^0.49.0"
 python = "^3.8"
 rich = "^11.2.0"
 rigel-hpl = "^0.1.0"
