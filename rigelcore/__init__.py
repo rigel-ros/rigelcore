@@ -10,4 +10,4 @@ from . import loggers  # noqa: F401
 from . import models  # noqa: F401
 from . import simulations  # noqa: F401
 
-__version__ = '0.1.16'
+__version__ = '0.1.17'
