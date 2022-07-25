@@ -1,16 +1,15 @@
-import docker
 import pydantic
+import python_on_whales
 import unittest
 from rigelcore.exceptions import (
     DockerAPIError,
-    DockerOperationError,
     InvalidDockerClientInstanceError,
-    InvalidDockerImageNameError,
     PydanticValidationError,
     RigelError,
     UndeclaredEnvironmentVariableError,
     UndeclaredGlobalVariableError
 )
+from typing import cast
 
 
 class ExceptionTesting(unittest.TestCase):
@@ -29,20 +28,10 @@ class ExceptionTesting(unittest.TestCase):
         """
         Ensure that instances of DockerAPIError are thrown as expected.
         """
-        exception = docker.errors.DockerException()
+        exception = python_on_whales.exceptions.DockerException(['dummy_command'], 0)
         err = DockerAPIError(exception=exception)
         self.assertEqual(err.code, 2)
         self.assertEqual(err.kwargs['exception'], exception)
-        self.assertTrue(isinstance(err, RigelError))
-
-    def test_docker_invalid_image_name_error(self) -> None:
-        """
-        Ensure that instances of InvalidDockerImageNameError are thrown as expected.
-        """
-        test_image = 'test_image'
-        err = InvalidDockerImageNameError(image=test_image)
-        self.assertEqual(err.code, 3)
-        self.assertEqual(err.kwargs['image'], test_image)
         self.assertTrue(isinstance(err, RigelError))
 
     def test_invalid_docker_client_instance_error(self) -> None:
@@ -51,16 +40,6 @@ class ExceptionTesting(unittest.TestCase):
         """
         err = InvalidDockerClientInstanceError()
         self.assertEqual(err.code, 4)
-        self.assertTrue(isinstance(err, RigelError))
-
-    def test_docker_operation_error(self) -> None:
-        """
-        Ensure that instances of DockerOperationError are thrown as expected.
-        """
-        test_msg = 'test_msg'
-        err = DockerOperationError(msg=test_msg)
-        self.assertEqual(err.code, 5)
-        self.assertEqual(err.kwargs['msg'], test_msg)
         self.assertTrue(isinstance(err, RigelError))
 
     def test_pydantic_validation_error(self) -> None:
@@ -73,7 +52,8 @@ class ExceptionTesting(unittest.TestCase):
             return a + b
 
         try:
-            test_sum('a', 12)  # type: ignore [arg-type]
+            arg = cast(int, str('a'))
+            test_sum(arg, 12)
         except pydantic.ValidationError as exception:
 
             err = PydanticValidationError(exception=exception)
