@@ -738,7 +738,6 @@ class DockerClientTesting(unittest.TestCase):
         docker_mock.container.run.assert_called_once_with(
             test_image,
             name=test_name,
-            detach=True,
             **test_kwargs
         )
 
