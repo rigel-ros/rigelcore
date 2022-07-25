@@ -282,7 +282,6 @@ class DockerClient:
         container = self.get_container(name)
         if not container:
             kwargs['name'] = name
-            kwargs['detach'] = True
             try:
                 return self.client.container.run(image, **kwargs)
             except python_on_whales.exceptions.DockerException as exception:
