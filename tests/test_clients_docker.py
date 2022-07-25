@@ -74,13 +74,15 @@ class DockerClientTesting(unittest.TestCase):
         test_dockerfile_path = 'test_dockerfile_path'
         test_image = 'test_image'
         test_buildargs = {'TEST_VARIABLE': 'TEST_VALUE'}
+        test_platforms = ['test_platform']
 
         docker_client = DockerClient()
         docker_client.build_image(
             test_context_path,
             test_dockerfile_path,
             test_image,
-            test_buildargs
+            test_buildargs,
+            test_platforms
         )
 
         docker_mock.build.assert_called_once_with(
@@ -88,7 +90,8 @@ class DockerClientTesting(unittest.TestCase):
             file=test_dockerfile_path,
             tags=test_image,
             build_args=test_buildargs,
-            load=True
+            load=True,
+            platforms=test_platforms
         )
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
@@ -106,7 +109,8 @@ class DockerClientTesting(unittest.TestCase):
                 'test_context_path',
                 'test_dockerfile_path',
                 'test_image',
-                {'TEST_VARIABLE': 'TEST_VALUE'}
+                {'TEST_VARIABLE': 'TEST_VALUE'},
+                ['test_platform']
             )
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
