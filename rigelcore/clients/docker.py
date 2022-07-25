@@ -5,7 +5,7 @@ from rigelcore.exceptions import (
     InvalidDockerClientInstanceError
 )
 from rigelcore.loggers import MessageLogger
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 
 class DockerClient:
@@ -85,7 +85,14 @@ class DockerClient:
         except python_on_whales.exceptions.DockerException as exception:
             raise DockerAPIError(exception=exception)
 
-    def build_image(self, path: str, dockerfile: str, image: str, build_args: Dict[str, str]) -> None:
+    def build_image(
+        self,
+        path: str,
+        dockerfile: str,
+        image: str,
+        build_args: Dict[str, str],
+        platforms: Optional[List[str]]
+    ) -> None:
         """
         Build a new Docker image.
 
@@ -97,6 +104,8 @@ class DockerClient:
         :param image: The name for the new Docker image.
         :type build_args: Dict[str, str]
         :param build_args: Build arguments.
+        :type platforms: Optional[List[str]]
+        :param platforms: List of target platforms when building the image.
         """
         try:
             self.client.build(
@@ -104,7 +113,8 @@ class DockerClient:
                 file=dockerfile,
                 tags=image,
                 build_args=build_args,
-                load=True
+                load=True,
+                platforms=platforms
             )
         except python_on_whales.exceptions.DockerException as exception:
             raise DockerAPIError(exception=exception)
