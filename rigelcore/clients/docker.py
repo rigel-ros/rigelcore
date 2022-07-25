@@ -159,7 +159,12 @@ class DockerClient:
         except python_on_whales.exceptions.DockerException:
             return None
 
-    def create_builder(self, name: str, use: bool = True) -> python_on_whales.components.buildx.cli_wrapper.Builder:
+    def create_builder(
+        self,
+        name: str,
+        use: bool = True,
+        driver: str = 'docker-container'
+    ) -> python_on_whales.components.buildx.cli_wrapper.Builder:
         """
         Create a Docker builder.
 
@@ -173,7 +178,7 @@ class DockerClient:
         builder = self.get_builder(name)
         if not builder:
             try:
-                return self.client.buildx.create(name=name, use=use)
+                return self.client.buildx.create(name=name, use=use, driver=driver)
             except python_on_whales.exceptions.DockerException as exception:
                 raise DockerAPIError(exception=exception)
         return builder  # return already existing builder

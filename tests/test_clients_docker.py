@@ -281,7 +281,8 @@ class DockerClientTesting(unittest.TestCase):
         builder_mock.assert_called_once_with(test_docker_builder_name)
         docker_mock.buildx.create.assert_called_once_with(
             name=test_docker_builder_name,
-            use=True
+            use=True,
+            driver='docker-container'
         )
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
@@ -293,19 +294,22 @@ class DockerClientTesting(unittest.TestCase):
 
         test_docker_builder_name = 'test_docker_builder_name'
         test_docker_builder_use = cast(bool, str('test_docker_builder_use'))
+        test_docker_driver = 'test_docker_driver'
 
         builder_mock.return_value = None
 
         docker_client = DockerClient()
         docker_client.create_builder(
             test_docker_builder_name,
-            use=test_docker_builder_use
+            use=test_docker_builder_use,
+            driver=test_docker_driver
         )
 
         builder_mock.assert_called_once_with(test_docker_builder_name)
         docker_mock.buildx.create.assert_called_once_with(
             name=test_docker_builder_name,
-            use=test_docker_builder_use
+            use=test_docker_builder_use,
+            driver=test_docker_driver
         )
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
