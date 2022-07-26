@@ -88,7 +88,6 @@ class DockerClient:
     def build_image(
         self,
         path: str,
-        dockerfile: str,
         image: str,
         build_args: Dict[str, str],
         platforms: Optional[List[str]]
@@ -98,8 +97,6 @@ class DockerClient:
 
         :type path: string
         :param path: Root of the build context.
-        :type dockerfile: string
-        :param dockerfile: Path for the Dockerfile.
         :type image: string
         :param image: The name for the new Docker image.
         :type build_args: Dict[str, str]
@@ -110,7 +107,6 @@ class DockerClient:
         try:
             self.client.build(
                 path,
-                file=dockerfile,
                 tags=image,
                 build_args=build_args,
                 load=True,

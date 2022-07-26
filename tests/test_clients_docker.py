@@ -71,7 +71,6 @@ class DockerClientTesting(unittest.TestCase):
         Ensure that the creation of Docker images works as expected.
         """
         test_context_path = 'test_context_path'
-        test_dockerfile_path = 'test_dockerfile_path'
         test_image = 'test_image'
         test_buildargs = {'TEST_VARIABLE': 'TEST_VALUE'}
         test_platforms = ['test_platform']
@@ -79,7 +78,6 @@ class DockerClientTesting(unittest.TestCase):
         docker_client = DockerClient()
         docker_client.build_image(
             test_context_path,
-            test_dockerfile_path,
             test_image,
             test_buildargs,
             test_platforms
@@ -87,7 +85,6 @@ class DockerClientTesting(unittest.TestCase):
 
         docker_mock.build.assert_called_once_with(
             test_context_path,
-            file=test_dockerfile_path,
             tags=test_image,
             build_args=test_buildargs,
             load=True,
@@ -107,7 +104,6 @@ class DockerClientTesting(unittest.TestCase):
             docker_client = DockerClient()
             docker_client.build_image(
                 'test_context_path',
-                'test_dockerfile_path',
                 'test_image',
                 {'TEST_VARIABLE': 'TEST_VALUE'},
                 ['test_platform']
