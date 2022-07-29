@@ -90,7 +90,8 @@ class DockerClient:
         path: str,
         image: str,
         build_args: Dict[str, str],
-        platforms: Optional[List[str]]
+        platforms: Optional[List[str]],
+        push: bool = False
     ) -> None:
         """
         Build a new Docker image.
@@ -103,6 +104,8 @@ class DockerClient:
         :param build_args: Build arguments.
         :type platforms: Optional[List[str]]
         :param platforms: List of target platforms when building the image.
+        :type push: bool
+        :param push: Flag to automatically push built images.
         """
         try:
             self.client.build(
@@ -110,7 +113,8 @@ class DockerClient:
                 tags=image,
                 build_args=build_args,
                 load=True,
-                platforms=platforms
+                platforms=platforms,
+                push=push
             )
         except python_on_whales.exceptions.DockerException as exception:
             raise DockerAPIError(exception=exception)

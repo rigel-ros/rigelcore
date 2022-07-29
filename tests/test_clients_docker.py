@@ -88,7 +88,8 @@ class DockerClientTesting(unittest.TestCase):
             tags=test_image,
             build_args=test_buildargs,
             load=True,
-            platforms=test_platforms
+            platforms=test_platforms,
+            push=False
         )
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
