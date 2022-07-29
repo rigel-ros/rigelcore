@@ -87,7 +87,6 @@ class DockerClientTesting(unittest.TestCase):
             test_context_path,
             tags=test_image,
             build_args=test_buildargs,
-            load=True,
             platforms=test_platforms,
             push=False
         )

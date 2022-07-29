@@ -112,7 +112,6 @@ class DockerClient:
                 path,
                 tags=image,
                 build_args=build_args,
-                load=True,
                 platforms=platforms,
                 push=push
             )
