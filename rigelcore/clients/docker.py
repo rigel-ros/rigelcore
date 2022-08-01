@@ -5,7 +5,7 @@ from rigelcore.exceptions import (
     InvalidDockerClientInstanceError
 )
 from rigelcore.loggers import MessageLogger
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 
 
 class DockerClient:
@@ -88,32 +88,21 @@ class DockerClient:
     def build_image(
         self,
         path: str,
-        image: str,
-        build_args: Dict[str, str],
-        platforms: Optional[List[str]],
-        push: bool = False
+        **kwargs: Any
     ) -> None:
         """
         Build a new Docker image.
 
         :type path: string
         :param path: Root of the build context.
-        :type image: string
-        :param image: The name for the new Docker image.
-        :type build_args: Dict[str, str]
-        :param build_args: Build arguments.
-        :type platforms: Optional[List[str]]
-        :param platforms: List of target platforms when building the image.
-        :type push: bool
-        :param push: Flag to automatically push built images.
+        :type kwargs: Dict[str, Any]
+        :param kwargs: Keyword arguments. Consult the documentation for more information
+        (https://github.com/gabrieldemarmiesse/python-on-whales/blob/master/python_on_whales/components/buildx/cli_wrapper.py#L204)
         """
         try:
             self.client.build(
                 path,
-                tags=image,
-                build_args=build_args,
-                platforms=platforms,
-                push=push
+                **kwargs
             )
         except python_on_whales.exceptions.DockerException as exception:
             raise DockerAPIError(exception=exception)

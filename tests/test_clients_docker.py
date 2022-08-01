@@ -78,17 +78,16 @@ class DockerClientTesting(unittest.TestCase):
         docker_client = DockerClient()
         docker_client.build_image(
             test_context_path,
-            test_image,
-            test_buildargs,
-            test_platforms
+            tags=test_image,
+            build_args=test_buildargs,
+            platforms=test_platforms
         )
 
         docker_mock.build.assert_called_once_with(
             test_context_path,
             tags=test_image,
             build_args=test_buildargs,
-            platforms=test_platforms,
-            push=False
+            platforms=test_platforms
         )
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
@@ -102,12 +101,8 @@ class DockerClientTesting(unittest.TestCase):
 
         with self.assertRaises(DockerAPIError) as context:
             docker_client = DockerClient()
-            docker_client.build_image(
-                'test_context_path',
-                'test_image',
-                {'TEST_VARIABLE': 'TEST_VALUE'},
-                ['test_platform']
-            )
+            docker_client.build_image('test_context_path')
+
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
