@@ -17,6 +17,9 @@ class RigelError(Exception):
         Exception.__init__(self, self.base.format(**kwargs))
         self.kwargs = kwargs
 
+    def __str__(self) -> str:
+        return f'({self.code}) {self.base}'
+
 
 class DockerAPIError(RigelError):
     """
