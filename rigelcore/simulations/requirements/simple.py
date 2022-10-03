@@ -46,7 +46,7 @@ class SimpleSimulationRequirementNode(SimulationRequirementNode):
         self.trigger: bool = False
 
     def __str__(self) -> str:
-        # TODO: use 'rich' to make a more readable output.
+        # TODO: use logger to make a more readable output.
         satisfied_msg = str(self.last_message) if self.last_message else "no ROS message received"
         if self.satisfied:
             return f'\n[{self.ros_topic}]\t- SATISFIED\t({satisfied_msg}): {self.predicate}'
