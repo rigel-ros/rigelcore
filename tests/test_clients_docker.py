@@ -39,6 +39,28 @@ class DockerClientTesting(unittest.TestCase):
         self.assertEqual(context.exception.kwargs['exception'], test_exception)
 
     @patch('rigelcore.clients.docker.python_on_whales.docker')
+    def test_get_attribute(self, docker_mock: Mock) -> None:
+        """
+        Ensure that the Docker client library wrapper works as expected.
+        """
+        docker_mock.my_test_attribute = 42
+        docker_client = DockerClient()
+        self.assertEqual(docker_client.my_test_attribute, docker_mock.my_test_attribute)
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
+    def test_get_attribute_error(self, docker_mock: Mock) -> None:
+        """
+        Ensure that an AttributeError is thrown in case an attribute does not exist at all.
+        """
+        test_exception = AttributeError()
+
+        docker_mock.my_test_attribute.side_effect = test_exception
+        with self.assertRaises(AttributeError) as context:
+            docker_client = DockerClient()
+            docker_client.my_test_attribute
+        self.assertEqual(context.exception.args, ("No 'DockerClient' object has attribute 'my_test_attribute'",))
+
+    @patch('rigelcore.clients.docker.python_on_whales.docker')
     def test_docker_get_image_none(self, docker_mock: Mock) -> None:
         """
         Ensure that the mechanism to retrieve existing Docker images

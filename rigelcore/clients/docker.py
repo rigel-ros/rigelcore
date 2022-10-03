@@ -36,6 +36,23 @@ class DockerClient:
         else:
             self.client = python_on_whales.docker
 
+    def __getattribute__(self, __name: str) -> Any:
+
+        # Wrapper for 'python_on_whales.docker_client.DockerClient'.
+        # Look for arguments inside wrapped class before throwing an AttributeError.
+
+        try:
+            return object.__getattribute__(self, __name)
+        except AttributeError:
+            pass
+
+        try:
+            return object.__getattribute__(self.client, __name)
+        except AttributeError:
+            pass
+
+        raise AttributeError(f"No 'DockerClient' object has attribute '{__name}'")
+
     def login(self, registry: str, username: str, password: str) -> None:
         """
         Authenticate user with a given Docker image regisry.
