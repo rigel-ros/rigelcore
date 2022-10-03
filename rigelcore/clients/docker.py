@@ -4,8 +4,11 @@ from rigelcore.exceptions import (
     DockerAPIError,
     InvalidDockerClientInstanceError
 )
-from rigelcore.loggers import MessageLogger
+from rigelcore.loggers import get_logger
 from typing import Any, Iterable, Optional, Tuple, Union
+
+
+MESSAGE_LOGGER = get_logger()
 
 
 class DockerClient:
@@ -325,7 +328,6 @@ class DockerClient:
         :type status: string
         :param status: The desires container status.
         """
-        logger = MessageLogger()
 
         elapsed_time = 0  # seconds
         while True:
@@ -336,7 +338,7 @@ class DockerClient:
                         return
                     time.sleep(self.DOCKER_RUN_WAIT_STATUS)
                     elapsed_time = elapsed_time + self.DOCKER_RUN_WAIT_STATUS
-                    logger.warning('Waiting for status of container {} to become "{}". Current status is "{}".'.format(
+                    MESSAGE_LOGGER.info('Waiting for status of container {} to become "{}". Current status is "{}".'.format(
                         container.id[:self.DOCKER_CONTAINER_ID_DISPLAY_SIZE],
                         status,
                         container.state.status
